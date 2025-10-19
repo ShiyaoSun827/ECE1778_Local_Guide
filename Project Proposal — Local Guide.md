@@ -1,7 +1,6 @@
 # Project Proposal — Local Guide
 
 # 1. Team Members
-
 | **Team Member** | **Student Number** | **GitHub Account** |
 | --- | --- | --- |
 | Wenxuan Wang | 1004975967 | WenxuanWangut |

@@ -128,7 +128,7 @@ export default function PlaceDetailsScreen() {
             title="Delete Place"
             onPress={handleDelete}
             variant="outline"
-            style={[styles.actionButton, { borderColor: colors.error }]}
+            style={{ ...styles.actionButton, borderColor: colors.error }}
             textStyle={{ color: colors.error }}
           />
         </View>

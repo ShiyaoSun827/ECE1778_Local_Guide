@@ -5,6 +5,7 @@ export interface Place {
   latitude: number;
   longitude: number;
   imageUri?: string;
+  category?: string;
   isFavorite: boolean;
   visitCount: number;
   createdAt: string;
@@ -17,5 +18,6 @@ export interface PlaceFormData {
   latitude: number;
   longitude: number;
   imageUri?: string;
+  category?: string;
 }
 

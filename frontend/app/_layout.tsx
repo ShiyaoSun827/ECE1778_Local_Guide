@@ -1,7 +1,17 @@
+import React, { useEffect } from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { PlacesProvider } from '../context/PlacesContext';
+import { useNotifications } from '../hooks/useNotifications';
 
-export default function RootLayout() {
+function AppContent() {
+  const { scheduleDailyReminder } = useNotifications();
+
+  useEffect(() => {
+    // Schedule daily exploration reminders on app start
+    scheduleDailyReminder();
+  }, [scheduleDailyReminder]);
+
   return (
     <>
       <StatusBar style="auto" />
@@ -19,7 +29,7 @@ export default function RootLayout() {
         <Stack.Screen
           name="index"
           options={{
-            title: 'My Places',
+            title: 'Local Guide',
           }}
         />
         <Stack.Screen
@@ -49,6 +59,14 @@ export default function RootLayout() {
         />
       </Stack>
     </>
+  );
+}
+
+export default function RootLayout() {
+  return (
+    <PlacesProvider>
+      <AppContent />
+    </PlacesProvider>
   );
 }
 

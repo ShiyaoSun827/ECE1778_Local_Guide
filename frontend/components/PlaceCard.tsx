@@ -8,12 +8,14 @@ interface PlaceCardProps {
   place: Place;
   onPress: () => void;
   onToggleFavorite?: () => void;
+  onDelete?: () => void;
 }
 
 export const PlaceCard: React.FC<PlaceCardProps> = ({
   place,
   onPress,
   onToggleFavorite,
+  onDelete,
 }) => {
   return (
     <TouchableOpacity
@@ -21,9 +23,26 @@ export const PlaceCard: React.FC<PlaceCardProps> = ({
       onPress={onPress}
       activeOpacity={0.7}
     >
-      {place.imageUri && (
-        <Image source={{ uri: place.imageUri }} style={styles.image} />
-      )}
+      <View style={styles.imageContainer}>
+        {place.imageUri ? (
+          <Image source={{ uri: place.imageUri }} style={styles.image} />
+        ) : (
+          <View style={styles.imagePlaceholder} />
+        )}
+        {onDelete && (
+          <TouchableOpacity
+            onPress={(e) => {
+              e.stopPropagation();
+              onDelete();
+            }}
+            style={styles.deleteButton}
+            accessibilityLabel="Delete place"
+            accessibilityHint="Double tap to delete this place"
+          >
+            <Text style={styles.deleteIcon}>×</Text>
+          </TouchableOpacity>
+        )}
+      </View>
       <View style={styles.content}>
         <View style={styles.header}>
           <Text style={styles.name} numberOfLines={1}>
@@ -67,10 +86,37 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     ...shadows.medium,
   },
+  imageContainer: {
+    position: 'relative',
+    width: '100%',
+  },
   image: {
     width: '100%',
     height: 200,
     backgroundColor: colors.border,
+  },
+  imagePlaceholder: {
+    width: '100%',
+    height: 200,
+    backgroundColor: colors.border,
+  },
+  deleteButton: {
+    position: 'absolute',
+    top: spacing.xs,
+    right: spacing.xs,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    opacity: 0.7,
+  },
+  deleteIcon: {
+    color: colors.surface,
+    fontSize: 20,
+    fontWeight: '300',
+    lineHeight: 20,
   },
   content: {
     padding: spacing.md,

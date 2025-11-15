@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Image, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import MapView, { Marker } from 'react-native-maps';
@@ -12,6 +12,7 @@ export default function PlaceDetailsScreen() {
   const router = useRouter();
   const { getPlace, deletePlace, toggleFavorite, incrementVisitCount } = usePlaces();
   const place = getPlace(id);
+  const lastIncrementedId = useRef<string | null>(null);
 
   const { weather, loading: weatherLoading } = useWeather(
     place?.latitude,
@@ -19,8 +20,11 @@ export default function PlaceDetailsScreen() {
   );
 
   useEffect(() => {
-    if (place) {
+    // Only increment visit count once per place when the details page is opened
+    // Track which place ID we've already incremented to avoid duplicates
+    if (id && place && lastIncrementedId.current !== id) {
       incrementVisitCount(place.id);
+      lastIncrementedId.current = id;
     }
   }, [id, place, incrementVisitCount]);
 

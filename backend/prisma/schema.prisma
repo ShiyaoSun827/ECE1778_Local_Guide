@@ -1,0 +1,153 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  user
+  admin
+  superadmin
+}
+
+//User：用户 + 角色 + 邮箱是否验证
+model User {
+  id            String  @id @default(cuid())
+  name          String?
+  email         String  @unique
+  emailVerified Boolean @default(false) // 备注：这个是给better auth用的，我打算用它决定能不能登录
+  image         String?
+
+  //给 admin 插件用：普通用户/管理员/超管
+  role Role @default(user)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Better Auth 的关系 
+  sessions      Session[]
+  accounts      Account[]
+  verifications Verification[]
+
+  // Local Guide 的业务关系，再补充
+  places   Place[]
+  comments Comment[]
+}
+
+//Session：登录 session（支持 logout）
+model Session {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  token     String   @unique
+  expiresAt DateTime
+
+  ipAddress String?
+  userAgent String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// Account：邮箱,密码账号
+model Account {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  providerId            String // 用 "email"
+  accountId             String // 用 邮箱
+  accessToken           String?
+  refreshToken          String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  idToken               String?
+
+  //  Email+Password 模式下存密码哈希
+  password String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([providerId, accountId])
+}
+
+//Verification：邮箱验证 / 重置密码验证码
+
+model Verification {
+  id         String   @id @default(cuid())
+  identifier String // 比如 email
+  value      String // 验证 token
+  expiresAt  DateTime
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User?    @relation(fields: [userId], references: [id])
+  userId    String?
+}
+
+//Local guide 的业务核心标
+
+//Category：地点分类
+
+model Category {
+  id    String  @id @default(cuid())
+  name  String
+  slug  String  @unique // 比如 "cafe" / "park"
+  color String? // 前端标签颜色
+  icon  String? // 前端图标名
+
+  places Place[]
+}
+
+//Place：Local Guide 的地点
+
+model Place {
+  id String @id @default(cuid())
+
+  // 属于哪个用户，因为每个人自己的个人低头
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  title       String // 地点名
+  description String? // 备注 / 心情
+  address     String? // 文本地址（Google Places 填）
+  latitude    Float // 坐标：用来算附近和调天气
+  longitude   Float
+
+  imageUri   String? // Expo image-picker 拍的图的 URI 或上传后的 URL
+  isFavorite Boolean @default(false) // Favorites Screen 用
+
+  // 分类
+  categoryId String?
+  category   Category? @relation(fields: [categoryId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  comments Comment[]
+}
+
+//Comment，地点下的评论日志
+model Comment {
+  id String @id @default(cuid())
+
+  placeId String
+  place   Place  @relation(fields: [placeId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  content String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

@@ -1,5 +1,5 @@
 // frontend/app/signin.tsx
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -17,6 +17,15 @@ export default function SignInScreen() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
+  const { data: session, isLoading } = authClient.useSession();
+
+  // 如果已经登录，又访问 /signin，就直接跳回首页
+  useEffect(() => {
+    if (!isLoading && session?.user) {
+      router.replace("/");
+    }
+  }, [isLoading, session, router]);
+
   const handleSignIn = async () => {
     if (!email || !password) {
       Alert.alert("Error", "Email and password cannot be empty");
@@ -25,15 +34,22 @@ export default function SignInScreen() {
 
     try {
       setLoading(true);
-      await authClient.signIn.email({
+
+      const { data, error } = await authClient.signIn.email({
         email,
         password,
       });
 
+      if (error) {
+        console.log("Sign-in error (Better Auth):", error);
+        Alert.alert("Login failed", error.message ?? "Unknown error");
+        return;
+      }
 
-      router.replace("/places");
+      // ✅ 登录成功 → 回到 layout 的首页
+      router.replace("/");
     } catch (err: any) {
-      console.log("Sign-in error:", err);
+      console.log("Sign-in error (network):", err);
       Alert.alert("Login failed", err?.message ?? "Unknown error");
     } finally {
       setLoading(false);

@@ -19,25 +19,25 @@ enum Role {
 //User：用户 + 角色 + 邮箱是否验证
 model User {
   id            String  @id @default(cuid())
-  name          String?
   email         String  @unique
-  emailVerified Boolean @default(false) // 备注：这个是给better auth用的，我打算用它决定能不能登录
+  name          String?
+  // 如果你有密码字段，就保留：
+  // password      String
+  emailVerified Boolean @default(false)
   image         String?
+  role          String  @default("user")
 
-  //给 admin 插件用：普通用户/管理员/超管
-  role Role @default(user)
+  //  Better Auth / admin 插件用
+  banned Boolean @default(false)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  // Better Auth 的关系 
-  sessions      Session[]
   accounts      Account[]
+  sessions      Session[]
   verifications Verification[]
-
-  // Local Guide 的业务关系，再补充
-  places   Place[]
-  comments Comment[]
+  places        Place[]
+  comments      Comment[]
 }
 
 //Session：登录 session（支持 logout）

@@ -26,21 +26,29 @@ export default function SignUpScreen() {
 
     try {
       setLoading(true);
-      await authClient.signUp.email({
+
+      // ✅ 关键：解构 data / error
+      const { data, error } = await authClient.signUp.email({
         email,
         password,
         name,
       });
 
+      if (error) {
+        console.log("Sign-up error (Better Auth):", error);
+        Alert.alert("Sign up failed", error.message ?? "Unknown error");
+        return;
+      }
+
+      // 只有真正成功才提示成功 + 跳转
       Alert.alert(
         "Success",
         "Signup successful! Please check your email to verify your account before signing in."
       );
 
- 
       router.replace("/signin");
     } catch (err: any) {
-      console.log("Sign-up error:", err);
+      console.log("Sign-up error (network):", err);
       Alert.alert("Sign up failed", err?.message ?? "Unknown error");
     } finally {
       setLoading(false);
@@ -69,7 +77,7 @@ export default function SignUpScreen() {
 
       <TextInput
         style={styles.input}
-        placeholder="Password"
+        placeholder="Password (min 8 characters)"
         secureTextEntry
         value={password}
         onChangeText={setPassword}

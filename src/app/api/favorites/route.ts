@@ -1,81 +1,70 @@
 // src/app/api/favorites/route.ts
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import prisma from "@/lib/prisma";
+import { prisma } from "@/lib/prisma";
 
-async function getSession(req: NextRequest) {
-  return auth.api.getSession({ headers: req.headers });
-}
+/**
+ * GET /api/favorites
+ * 返回当前登录用户的所有收藏 place
+ */
+export async function GET(request: Request) {
+  const session = await auth.api.getSession({ headers: request.headers });
 
-// GET /api/favorites
-export async function GET(req: NextRequest) {
-  const session = await getSession(req);
-  if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session?.user) {
+    // 没登录：游客，直接 401
+    return NextResponse.json(
+      { error: "Unauthorized - please sign in first." },
+      { status: 401 }
+    );
   }
 
   const userId = session.user.id;
 
-  const favorites = await prisma.favorite.findMany({
-    where: { userId },
-    include: {
-      place: true,
+  // 这里的 Prisma 写法要对应你自己的模型
+  // 假设有 Favorite 表：{ id, userId, placeId }，Place 表：{ id, name, ... }
+  const favorites = await prisma.place.findMany({
+    where: {
+      favorites: {
+        some: { userId },
+      },
     },
     orderBy: { createdAt: "desc" },
   });
 
-  const data = favorites.map((f) => ({
-    id: f.place.id,
-    title: f.place.title,
-    description: f.place.description,
-    address: f.place.address,
-    latitude: f.place.latitude,
-    longitude: f.place.longitude,
-    imageUri: f.place.imageUri,
-    createdAt: f.place.createdAt,
-    isFavorite: true,
-  }));
-
-  return NextResponse.json(data);
+  return NextResponse.json(favorites);
 }
 
-// PATCH /api/favorites
-// body: { placeId: string, favorite: boolean }
-export async function PATCH(req: NextRequest) {
-  const session = await getSession(req);
-  if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+/**
+ * PATCH /api/favorites
+ * body: { placeId: string, favorite: boolean }
+ * favorite = true  -> 添加收藏
+ * favorite = false -> 取消收藏
+ */
+export async function PATCH(request: Request) {
+  const session = await auth.api.getSession({ headers: request.headers });
+
+  if (!session?.user) {
+    return NextResponse.json(
+      { error: "Unauthorized - please sign in first." },
+      { status: 401 }
+    );
   }
 
   const userId = session.user.id;
+  const { placeId, favorite } = await request.json();
 
-  const body = await req.json().catch(() => null);
-  if (!body) {
-    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
-  }
-
-  const { placeId, favorite } = body as {
-    placeId?: string;
-    favorite?: boolean;
-  };
-
-  if (!placeId || typeof favorite !== "boolean") {
-    return NextResponse.json({ error: "placeId and favorite are required" }, { status: 400 });
-  }
-
-  const place = await prisma.place.findUnique({ where: { id: placeId } });
-  if (!place) {
-    return NextResponse.json({ error: "Place not found" }, { status: 404 });
+  if (!placeId) {
+    return NextResponse.json(
+      { error: "placeId is required" },
+      { status: 400 }
+    );
   }
 
   if (favorite) {
-    // 
+    // 添加收藏：如果不存在就创建
     await prisma.favorite.upsert({
       where: {
-        userId_placeId: {
-          userId,
-          placeId,
-        },
+        userId_placeId: { userId, placeId },
       },
       create: {
         userId,
@@ -90,5 +79,5 @@ export async function PATCH(req: NextRequest) {
     });
   }
 
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ success: true });
 }

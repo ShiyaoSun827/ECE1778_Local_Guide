@@ -5,24 +5,51 @@ import { StatusBar } from "expo-status-bar";
 import { PlacesProvider } from "../context/PlacesContext";
 import { useNotifications } from "../hooks/useNotifications";
 
-
-import { Pressable } from "react-native";
+import { Pressable, Alert } from "react-native";
 import { FontAwesome } from "@expo/vector-icons";
 import { authClient } from "../lib/authClient";
 
-// Header auth button: when not signed in -> navigate to sign-in; when signed in -> navigate to favorites
+// 右上角用户按钮：
+// 1）未登录：跳转到 /signin
+// 2）已登录：弹窗确认是否退出登录，确认后 signOut + 提示成功
 function HeaderAuthButton() {
   const router = useRouter();
   const { data: session, isPending } = authClient.useSession();
   const user = session?.user;
+  const isLoggedIn = !!user;
 
   const handlePress = () => {
-    if (!user) {
-      // Not signed in: navigate to sign-in page, which also provides a "sign up" button
+    if (!isLoggedIn) {
+      // 未登录：进入登录页（登录页里有“注册”按钮）
       router.push("/signin");
     } else {
-      // Signed in: directly view your Favorites (read from backend by user)
-      router.push("/favorites/index");
+      // 已登录：弹出确认框
+      Alert.alert(
+        "Sign out",
+        "Do you want to sign out?",
+        [
+          {
+            text: "Cancel",
+            style: "cancel",
+          },
+          {
+            text: "Sign out",
+            style: "destructive",
+            onPress: async () => {
+              try {
+                await authClient.signOut();
+                Alert.alert("Success", "You have been signed out.");
+                // 如果你希望登出后强制回首页，可以再加：
+                // router.replace("/");
+              } catch (err: any) {
+                console.log("Logout error:", err);
+                Alert.alert("Error", err?.message ?? "Logout failed");
+              }
+            },
+          },
+        ],
+        { cancelable: true }
+      );
     }
   };
 
@@ -33,8 +60,8 @@ function HeaderAuthButton() {
       disabled={isPending}
     >
       <FontAwesome
-        // When signed in, show solid user icon; when not signed in, show outline user icon
-        name={user ? "user-circle" : "user-o"}
+        // 已登录：实心头像；未登录：空心头像
+        name={isLoggedIn ? "user-circle" : "user-o"}
         size={22}
         color="#fff"
       />
@@ -46,7 +73,7 @@ function AppContent() {
   const { scheduleDailyReminder } = useNotifications();
 
   useEffect(() => {
-    // Schedule daily exploration reminders on app start
+    // App 启动时安排每日提醒
     scheduleDailyReminder();
   }, [scheduleDailyReminder]);
 
@@ -62,7 +89,7 @@ function AppContent() {
           headerTitleStyle: {
             fontWeight: "bold",
           },
-          // 👇 All pages have a user icon button in the top right corner
+          // 所有页面右上角统一使用 HeaderAuthButton
           headerRight: () => <HeaderAuthButton />,
         }}
       >
@@ -97,7 +124,7 @@ function AppContent() {
             title: "Favorites",
           }}
         />
-        {/* Add sign-in / sign-up pages to the navigation stack */}
+        {/* 登录 / 注册页 */}
         <Stack.Screen
           name="signin"
           options={{

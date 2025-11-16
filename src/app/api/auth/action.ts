@@ -28,8 +28,9 @@ export async function signUpWithEmail(formData: FormData) {
     },
     headers: await headers(),
   });
-
+  console.log("signUpEmail status =", res.status);
   const data = await res.json().catch(() => ({}));
+  console.log("signUpEmail response =", data);
 
   if (res.status >= 400) {
     return {

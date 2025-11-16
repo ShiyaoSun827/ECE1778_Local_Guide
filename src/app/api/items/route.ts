@@ -1,86 +1,57 @@
 // src/app/api/items/route.ts
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import prisma from "@/lib/prisma";
+import { prisma } from "@/lib/prisma";
 
-// Utility: Get session from request
-async function getSession(req: NextRequest) {
-  return auth.api.getSession({ headers: req.headers });
-}
-
-// GET /api/items  List
-export async function GET(req: NextRequest) {
-  const session = await getSession(req);
-  if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  const userId = session.user.id;
-
-  // Only show places saved by the current user
-  const places = await prisma.place.findMany({
-    where: { ownerId: userId },
-    include: {
-      favorites: {
-        where: { userId }, // Check if the user has favorited
-      },
-    },
+/**
+ * GET /api/items
+ * 所有人（包括游客）都可以看列表
+ */
+export async function GET() {
+  const items = await prisma.place.findMany({
     orderBy: { createdAt: "desc" },
   });
 
-  const data = places.map((p) => ({
-    id: p.id,
-    title: p.title,
-    description: p.description,
-    address: p.address,
-    latitude: p.latitude,
-    longitude: p.longitude,
-    imageUri: p.imageUri,
-    createdAt: p.createdAt,
-    isFavorite: p.favorites.length > 0,
-  }));
-
-  return NextResponse.json(data);
+  return NextResponse.json(items);
 }
 
-// POST /api/items  Create
-export async function POST(req: NextRequest) {
-  const session = await getSession(req);
-  if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+/**
+ * POST /api/items
+ * 只有登录用户可以新增地点
+ * body: { name, description?, latitude, longitude, imageUri? }
+ */
+export async function POST(request: Request) {
+  const session = await auth.api.getSession({ headers: request.headers });
+
+  if (!session?.user) {
+    // 游客不允许新增
+    return NextResponse.json(
+      { error: "Unauthorized - please sign in to add places." },
+      { status: 401 }
+    );
   }
 
   const userId = session.user.id;
+  const body = await request.json();
+  const { name, description, latitude, longitude, imageUri } = body;
 
-  const body = await req.json().catch(() => null);
-  if (!body) {
-    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+  if (!name || typeof latitude !== "number" || typeof longitude !== "number") {
+    return NextResponse.json(
+      { error: "name, latitude and longitude are required" },
+      { status: 400 }
+    );
   }
 
-  const {
-    title,
-    description,
-    address,
-    latitude,
-    longitude,
-    imageUri,
-  } = body;
-
-  if (!title || !address || typeof latitude !== "number" || typeof longitude !== "number") {
-    return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
-  }
-
-  const place = await prisma.place.create({
+  const newPlace = await prisma.place.create({
     data: {
-      title,
+      name,
       description: description ?? "",
-      address,
       latitude,
       longitude,
-      imageUri: imageUri ?? null,
-      ownerId: userId,
+      imageUrl: imageUri ?? null,
+      userId, // 如果你的 Place 里有 userId 字段，记录是谁创建的
     },
   });
 
-  return NextResponse.json(place, { status: 201 });
+  return NextResponse.json(newPlace, { status: 201 });
 }

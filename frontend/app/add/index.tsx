@@ -1,3 +1,4 @@
+// frontend/app/add/index.tsx
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, ScrollView, Alert, Text } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -7,6 +8,8 @@ import { ScreenContainer, TextField, Button, PhotoPicker } from '../../component
 import { usePlaces, useLocationPermission, usePhotoPicker } from '../../hooks';
 import { PlaceFormData } from '../../types';
 import { validation, spacing, colors, typography } from '../../theme';
+// ✅ 新增：引入 authClient，用来区分游客 / 登录用户
+import { authClient } from '../../lib/authClient';
 
 export default function AddPlaceScreen() {
   const router = useRouter();
@@ -21,6 +24,9 @@ export default function AddPlaceScreen() {
   const [loading, setLoading] = useState(false);
   const [address, setAddress] = useState('');
   const [geocodingLoading, setGeocodingLoading] = useState(false);
+
+  // ✅ 新增：当前登录状态（游客 / 已登录用户）
+  const { data: session } = authClient.useSession();
 
   const {
     control,
@@ -82,13 +88,22 @@ export default function AddPlaceScreen() {
         setValue('latitude', latitude);
         setValue('longitude', longitude);
         // Show success message with coordinates
-        Alert.alert('Success', `Location found:\nLatitude: ${latitude.toFixed(6)}\nLongitude: ${longitude.toFixed(6)}`);
+        Alert.alert(
+          'Success',
+          `Location found:\nLatitude: ${latitude.toFixed(6)}\nLongitude: ${longitude.toFixed(6)}`
+        );
       } else {
-        Alert.alert('Error', 'Could not find location for this address. Please try a more specific address.');
+        Alert.alert(
+          'Error',
+          'Could not find location for this address. Please try a more specific address.'
+        );
       }
     } catch (error) {
       console.error('Geocoding error:', error);
-      Alert.alert('Error', 'Failed to geocode address. Please check your internet connection and try again.');
+      Alert.alert(
+        'Error',
+        'Failed to geocode address. Please check your internet connection and try again.'
+      );
     } finally {
       setGeocodingLoading(false);
     }
@@ -116,6 +131,22 @@ export default function AddPlaceScreen() {
   const onSubmit = async (data: PlaceFormData) => {
     if (!data.latitude || !data.longitude) {
       Alert.alert('Error', 'Please set location coordinates');
+      return;
+    }
+
+    // ✅ 核心改动：这里先判断有没有登录（有 session = 登录用户，没 session = 游客）
+    if (!session?.user) {
+      Alert.alert(
+        'Sign in required',
+        'Please sign in to add a new place.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Go to Sign In',
+            onPress: () => router.push('/signin'),
+          },
+        ]
+      );
       return;
     }
 
@@ -209,50 +240,50 @@ export default function AddPlaceScreen() {
           <View style={styles.coordinatesSection}>
             <Text style={styles.coordinatesLabel}>Or Enter Coordinates</Text>
             <Controller
-            control={control}
-            rules={validation.latitude}
-            render={({ field: { onChange, onBlur, value } }) => (
-              <TextField
-                label="Latitude"
-                placeholder="Enter latitude"
-                value={value.toString()}
-              onChangeText={(text) => {
-                onChange(parseFloat(text) || 0);
-                // Clear address when manually entering coordinates
-                if (text.trim()) {
-                  setAddress('');
-                }
-              }}
-              onBlur={onBlur}
-              keyboardType="numeric"
-              error={errors.latitude?.message}
+              control={control}
+              rules={validation.latitude}
+              render={({ field: { onChange, onBlur, value } }) => (
+                <TextField
+                  label="Latitude"
+                  placeholder="Enter latitude"
+                  value={value.toString()}
+                  onChangeText={(text) => {
+                    onChange(parseFloat(text) || 0);
+                    // Clear address when manually entering coordinates
+                    if (text.trim()) {
+                      setAddress('');
+                    }
+                  }}
+                  onBlur={onBlur}
+                  keyboardType="numeric"
+                  error={errors.latitude?.message}
+                />
+              )}
+              name="latitude"
             />
-          )}
-          name="latitude"
-        />
 
-        <Controller
-          control={control}
-          rules={validation.longitude}
-          render={({ field: { onChange, onBlur, value } }) => (
-            <TextField
-              label="Longitude"
-              placeholder="Enter longitude"
-              value={value.toString()}
-              onChangeText={(text) => {
-                onChange(parseFloat(text) || 0);
-                // Clear address when manually entering coordinates
-                if (text.trim()) {
-                  setAddress('');
-                }
-              }}
-              onBlur={onBlur}
-              keyboardType="numeric"
-              error={errors.longitude?.message}
+            <Controller
+              control={control}
+              rules={validation.longitude}
+              render={({ field: { onChange, onBlur, value } }) => (
+                <TextField
+                  label="Longitude"
+                  placeholder="Enter longitude"
+                  value={value.toString()}
+                  onChangeText={(text) => {
+                    onChange(parseFloat(text) || 0);
+                    // Clear address when manually entering coordinates
+                    if (text.trim()) {
+                      setAddress('');
+                    }
+                  }}
+                  onBlur={onBlur}
+                  keyboardType="numeric"
+                  error={errors.longitude?.message}
+                />
+              )}
+              name="longitude"
             />
-          )}
-          name="longitude"
-        />
           </View>
         </View>
 
@@ -319,4 +350,3 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xl,
   },
 });
-

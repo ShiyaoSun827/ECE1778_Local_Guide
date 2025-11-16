@@ -1,31 +1,36 @@
 // src/lib/email.ts
 import nodemailer from "nodemailer";
 
-type SendEmailOptions = {
+type SendEmailParams = {
   to: string;
   subject: string;
   html: string;
 };
 
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,        
-  port: Number(process.env.SMTP_PORT) || 587,
-  secure: false,                       
-  auth: {
-    user: process.env.SMTP_USER,        
-    pass: process.env.SMTP_PASS,        
-  },
-});
+export async function sendEmail({ to, subject, html }: SendEmailParams) {
+  const user = process.env.GMAIL_USER;
+  const pass = process.env.GMAIL_APP_PASSWORD;
 
-export async function sendEmail({ to, subject, html }: SendEmailOptions) {
-  if (!process.env.SMTP_USER) {
-    console.warn("[sendEmail] SMTP_USER not set. Email not sent.");
-    console.log({ to, subject, html });
+  if (!user || !pass) {
+    console.error(
+      "[sendEmail] GMAIL_USER or GMAIL_APP_PASSWORD not set. Email not sent."
+    );
+    console.error({ to, subject /* 不打印 html 避免太长 */ });
     return;
   }
 
+  const transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+      user,
+      pass,
+    },
+  });
+
+  console.log("[sendEmail] Sending email:", { to, subject });
+
   await transporter.sendMail({
-    from: `"Local Guide" <${process.env.SMTP_USER}>`,
+    from: `"Local Guide" <${user}>`,
     to,
     subject,
     html,

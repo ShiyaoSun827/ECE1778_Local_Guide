@@ -60,7 +60,7 @@ npm install
 `authClient.ts` is configured to call the backend (e.g. `http://127.0.0.1:3000` or a LAN IP). To control this with an environment variable, add to `frontend/.env`:
 
 ```env
-EXPO_PUBLIC_API_BASE_URL="http://192.168.0.10:3000"
+EXPO_PUBLIC_API_BASE_URL="Use yours"
 ```
 
 and in `authClient.ts`:
@@ -82,13 +82,7 @@ From `frontend/`:
 npx expo start
 ```
 
-Expo opens DevTools and prints a Metro URL like:
 
-```
-exp://192.168.0.10:8081
-```
-
-Make sure that host/IP in this URL matches `EXPO_DEV_ORIGIN` in the backend `.env` so authentication origins align.
 
 
 

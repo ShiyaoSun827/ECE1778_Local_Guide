@@ -5,7 +5,7 @@ import { nextCookies } from "better-auth/next-js";
 import { admin } from "better-auth/plugins";
 import { prisma } from "@/lib/prisma";
 import { sendEmail } from "@/lib/email";
-
+import { expo } from "@better-auth/expo";
 export const auth = betterAuth({
 
   database: prismaAdapter(prisma, {

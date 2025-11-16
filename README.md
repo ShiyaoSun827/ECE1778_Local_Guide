@@ -26,7 +26,7 @@ If issues arise, try:
 
 - `npx @better-auth/cli migrate`
 
-# TODO
+# Completed
 ### 1. `prisma/schema.prisma` —— **数据库 & 业务模型设计**
 
 * 定义 **User / Session / Account / Verification**：

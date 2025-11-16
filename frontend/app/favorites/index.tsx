@@ -30,38 +30,39 @@ export default function FavoritesScreen() {
   const [loading, setLoading] = useState(false);
 
   const loadFavorites = async () => {
-    try {
-      setLoading(true);
+  try {
+    setLoading(true);
 
-      const cookies = authClient.getCookie();
-      const res = await fetch(`${BACKEND_BASE_URL}/api/favorites`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          ...(cookies ? { Cookie: cookies } : {}),
-        },
-      });
+    const cookies = authClient.getCookie();
+    const res = await fetch(`${BACKEND_BASE_URL}/api/favorites`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        ...(cookies ? { Cookie: cookies } : {}),
+      },
+    });
 
-      if (res.status === 401) {
-        // 后端说未登录
-        setFavorites([]);
-        return;
-      }
-
-      if (!res.ok) {
-        const text = await res.text();
-        throw new Error(text || `HTTP ${res.status}`);
-      }
-
-      const data = (await res.json()) as FavoritePlace[];
-      setFavorites(data ?? []);
-    } catch (err: any) {
-      console.error("Load favorites error:", err);
-      Alert.alert("Error", err?.message ?? "Failed to load favorites");
-    } finally {
-      setLoading(false);
+    if (res.status === 401) {
+      setFavorites([]);
+      return;
     }
-  };
+
+    if (!res.ok) {
+      const text = await res.text();
+      console.error("Backend /api/favorites error text:", text);
+      throw new Error(text || `HTTP ${res.status}`);
+    }
+
+    const data = (await res.json()) as FavoritePlace[];
+    setFavorites(data ?? []);
+  } catch (err: any) {
+    console.error("Load favorites error:", err);
+    Alert.alert("Error", err?.message ?? "Failed to load favorites");
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   useEffect(() => {
     if (session?.user) {

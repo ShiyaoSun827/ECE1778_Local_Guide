@@ -1,83 +1,52 @@
 // src/app/api/favorites/route.ts
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
-/**
- * GET /api/favorites
- * 返回当前登录用户的所有收藏 place
- */
-export async function GET(request: Request) {
-  const session = await auth.api.getSession({ headers: request.headers });
+export async function GET(req: NextRequest) {
+  // 1. 从 Better Auth 拿当前 session
+  const session = await auth.api.getSession({ headers: req.headers });
 
   if (!session?.user) {
-    // 没登录：游客，直接 401
     return NextResponse.json(
-      { error: "Unauthorized - please sign in first." },
+      { error: "Unauthorized" },
       { status: 401 }
     );
   }
 
   const userId = session.user.id;
 
-  // 这里的 Prisma 写法要对应你自己的模型
-  // 假设有 Favorite 表：{ id, userId, placeId }，Place 表：{ id, name, ... }
-  const favorites = await prisma.place.findMany({
-    where: {
-      favorites: {
-        some: { userId },
-      },
-    },
-    orderBy: { createdAt: "desc" },
-  });
-
-  return NextResponse.json(favorites);
-}
-
-/**
- * PATCH /api/favorites
- * body: { placeId: string, favorite: boolean }
- * favorite = true  -> 添加收藏
- * favorite = false -> 取消收藏
- */
-export async function PATCH(request: Request) {
-  const session = await auth.api.getSession({ headers: request.headers });
-
-  if (!session?.user) {
-    return NextResponse.json(
-      { error: "Unauthorized - please sign in first." },
-      { status: 401 }
-    );
-  }
-
-  const userId = session.user.id;
-  const { placeId, favorite } = await request.json();
-
-  if (!placeId) {
-    return NextResponse.json(
-      { error: "placeId is required" },
-      { status: 400 }
-    );
-  }
-
-  if (favorite) {
-    // 添加收藏：如果不存在就创建
-    await prisma.favorite.upsert({
+  try {
+    // 2. 从 Place 表中查询“当前用户的收藏”
+    // 条件：这个 userId 的 place，并且 isFavorite = true
+    const places = await prisma.place.findMany({
       where: {
-        userId_placeId: { userId, placeId },
+        userId,       // 只查当前用户自己的地标
+        isFavorite: true,
       },
-      create: {
-        userId,
-        placeId,
+      orderBy: {
+        createdAt: "desc",
       },
-      update: {},
     });
-  } else {
-    // 取消收藏
-    await prisma.favorite.deleteMany({
-      where: { userId, placeId },
-    });
-  }
 
-  return NextResponse.json({ success: true });
+    // 3. 映射成前端 favorites/index.tsx 期望的结构
+    const result = places.map((p) => ({
+      id: p.id,
+      title: p.title,
+      description: p.description,
+      address: p.address,
+      latitude: p.latitude,
+      longitude: p.longitude,
+      imageUri: p.imageUri,
+      isFavorite: p.isFavorite,
+    }));
+
+    return NextResponse.json(result);
+  } catch (err) {
+    console.error("[GET /api/favorites] error:", err);
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 }
+    );
+  }
 }

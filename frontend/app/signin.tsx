@@ -22,6 +22,7 @@ export default function SignInScreen() {
   // 如果已经登录，又访问 /signin，就直接跳回首页
   useEffect(() => {
     if (!isLoading && session?.user) {
+      console.log("Already signed in, redirect to /");
       router.replace("/");
     }
   }, [isLoading, session, router]);
@@ -46,8 +47,16 @@ export default function SignInScreen() {
         return;
       }
 
-      // ✅ 登录成功 → 回到 layout 的首页
-      router.replace("/");
+      console.log("Sign-in success, data:", data);
+      Alert.alert("Success", "Login successful!", [
+        {
+          text: "OK",
+          onPress: () => {
+            
+            router.replace("/");
+          },
+        },
+      ]);
     } catch (err: any) {
       console.log("Sign-in error (network):", err);
       Alert.alert("Login failed", err?.message ?? "Unknown error");

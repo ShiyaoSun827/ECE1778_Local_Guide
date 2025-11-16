@@ -8,7 +8,7 @@
     - `npm install`
 - Ensure the following environment variables are set up:
 
-**In `backend/.env`:**
+**In `src/.env`:**
 
 ```
 DATABASE_URL="postgresql://username:password@localhost:5432/paper_management?schema=public"
@@ -26,104 +26,101 @@ If issues arise, try:
 
 - `npx @better-auth/cli migrate`
 
-# Completed
-### 1. `prisma/schema.prisma` —— **数据库 & 业务模型设计**
 
-* 定义 **User / Session / Account / Verification**：
+### Start the backend
 
-  * 满足 Better Auth 的结构要求（邮箱登录、密码、验证 token、session 记录等）
-* 定义 **Local Guide 领域模型**：
+From the repository root:
 
-  * `Place`：一个地点的所有信息（title, description, address, latitude, longitude, imageUri, ownerId, createdAt…）
-  * `Favorite`：`userId + placeId` 组合，记录谁收藏了什么
-  * `Category`、`Comment` 等
----
-
-### 2. `src/lib/prisma.ts` —— **Prisma**
-
----
-
-### 3. `src/lib/email.ts` —— **发邮箱验证邮件/通知的工具**
-
-* 用 `nodemailer` 封装一个 `sendEmail({ to, subject, html })`：
-
-  * 读 `.env` 的 `SMTP_HOST / SMTP_PORT / SMTP_USER / SMTP_PASS`
-  * 支撑 **邮箱验证功能**：Better Auth 产生验证 URL，这个模块负责真正发出邮件。
-
----
-
-### 4. `src/lib/auth.ts` —— **Better Auth 后端配置**
-
-* 使用 `betterAuth(...)` + `prismaAdapter(prisma, { provider: 'postgresql' })` 把认证系统挂到数据库。
-
-* 开启 **email + password 登录**：
-
-  ```ts
-  emailAndPassword: {
-    enabled: true,
-    requireEmailVerification: true,
-  }
-  ```
-
-* 配置邮箱验证逻辑：
-
-  ```ts
-  emailVerification: {
-    sendOnSignUp: true,
-    autoSignInAfterVerification: true,
-    sendVerificationEmail: ({ user, url }) => sendEmail(...)
-  }
-  ```
-
-* 使用 `nextCookies()` 插件管理 cookie；
-
-* 使用 `admin({ adminRoles: ["admin", "superadmin"] })` 来区分管理员。
----
-
-### 5. `src/app/api/auth/[...all]/route.ts` —— **认证 REST API **
-
-
-```ts
-import { auth } from "@/lib/auth";
-import { toNextJsHandler } from "better-auth/next-js";
-
-export const { GET, POST } = toNextJsHandler(auth);
+```bash
+npm run dev
 ```
 
-* **注意-----------------------把所有 Better Auth 自带的接口挂在 `/api/auth/*` 下面**：
+The backend listens by default at: `http://127.0.0.1:3000`
 
-  * `/api/auth/sign-up/email`
-  * `/api/auth/sign-in/email`
-  * `/api/auth/sign-out`
-  * `/api/auth/email/verify`
-  * ……
+Provided endpoints:
 
----
-
-### 6. `src/lib/auth-client.ts` —— **前端用的认证客户端**
-* 用 `createAuthClient` 生成一个 `authClient`，指向 `/api/auth/...`
-* 导出 `signUp`, `signIn`, `signOut`, `verifyEmail`, `useSession` 等方法给前端。
+- `/api/auth/...` — Better Auth: sign up / sign in / sign out / session / email verification
+- `/api/places`, `/api/favorites`, etc. — Local Guide business APIs (used by the mobile app)
 
 ---
 
-### 7. `src/app/api/auth/actions.ts`—— **登录 / 注册 / 退出的 Server Actions**
+## Frontend (React Native + Expo)
+
+The frontend is in the `frontend/` directory.
+
+### Install dependencies
+
+```bash
+cd frontend
+npm install
+```
+
+### Configure frontend → backend base URL
+
+`authClient.ts` is configured to call the backend (e.g. `http://127.0.0.1:3000` or a LAN IP). To control this with an environment variable, add to `frontend/.env`:
+
+```env
+EXPO_PUBLIC_API_BASE_URL="http://192.168.0.10:3000"
+```
+
+and in `authClient.ts`:
+
+```ts
+const baseURL =
+    process.env.EXPO_PUBLIC_API_BASE_URL ?? "http://127.0.0.1:3000";
+```
+
+Notes:
+- For a physical phone, set the value to your computer’s LAN IP, e.g. `http://192.168.0.10:3000`.
+- The IP must match the IP in the backend `.env` value `EXPO_DEV_ORIGIN`; otherwise Better Auth may reject requests with "Invalid origin".
+
+### Start Expo dev server
+
+From `frontend/`:
+
+```bash
+npx expo start
+```
+
+Expo opens DevTools and prints a Metro URL like:
+
+```
+exp://192.168.0.10:8081
+```
+
+Make sure that host/IP in this URL matches `EXPO_DEV_ORIGIN` in the backend `.env` so authentication origins align.
 
 
-* server action：
-
-  ```ts
-  export async function signUpWithEmail(formData: FormData) { ... }
-  export async function signInWithEmail(formData: FormData) { ... }
-  export async function logout() { ... }
-  ```
-
-* 内部调用 `auth.api.signUpEmail` / `auth.api.signInEmail` / `auth.api.signOut`，并且：
-
-  * 根据返回状态码处理 “邮箱未验证” / “密码错误” / “成功”
-  * 返回给前端一个统一的 `{ success, message, redirectTo }` 结构，方便在页面里显示 toast + 做跳转。
 
 
+### Account-related logic
 
+1. Visitor opens the app
+    - Sees the home page (`index.tsx`) with no Sign Out button at the bottom.
+    - Top-right avatar is an outline; tapping it navigates to `/signin`.
+
+2. Sign up
+    - On `/signup` fill in details → `authClient.signUp.email(...)`.
+    - Backend (Better Auth) creates the user and sends a verification email.
+    - User clicks the verification link → `emailVerified = true`.
+    - Return to the app and sign in from `/signin`.
+
+3. Sign in
+    - On `/signin` enter email and password → `authClient.signIn.email(...)`.
+    - On success → `router.replace("/")` to return to the home page.
+    - Home now shows the Sign Out button and the top-right avatar becomes filled.
+
+4. Sign out
+    - Option A: Bottom Sign Out button on home → call `authClient.signOut()` and show a "Signed out" message.
+    - Option B: Top-right avatar → show an alert confirmation; on confirm call `authClient.signOut()` and show a "Signed out" message.
+
+5. Next time the app opens
+    - If the session is still valid, `useSession()` returns the user:
+      - Sign Out remains visible on the home page.
+      - Visiting `/signin` will `router.replace("/")` and redirect to home.
+    - If signed out, `useSession()` is empty:
+      - No Sign Out button is shown.
+      - Clicking the top-right avatar navigates to `/signin` to sign in again.
 
 
 

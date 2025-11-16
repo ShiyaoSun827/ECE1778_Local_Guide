@@ -11,7 +11,7 @@ import {
 import { colors, spacing } from "../../theme";
 import { authClient } from "../../lib/authClient";
 
-// 后端地址，和 authClient 里保持一致
+
 const BACKEND_BASE_URL = "http://127.0.0.1:3000";
 
 type FavoritePlace = {
@@ -66,7 +66,7 @@ export default function FavoritesScreen() {
 
   useEffect(() => {
     if (session?.user) {
-      // 登录状态下才去拉收藏
+      
       loadFavorites();
     } else if (!isPending) {
       setFavorites([]);
@@ -154,7 +154,7 @@ export default function FavoritesScreen() {
               }}
               onPress={() => handlePlacePress(item.id)}
               onToggleFavorite={() => {
-                // TODO: 可以在这里加 toggleFavorite 调接口
+                
               }}
             />
           ))}

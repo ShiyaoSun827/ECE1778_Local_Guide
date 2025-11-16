@@ -27,7 +27,6 @@ export default function SignUpScreen() {
     try {
       setLoading(true);
 
-      // ✅ 关键：解构 data / error
       const { data, error } = await authClient.signUp.email({
         email,
         password,
@@ -40,7 +39,7 @@ export default function SignUpScreen() {
         return;
       }
 
-      // 只有真正成功才提示成功 + 跳转
+
       Alert.alert(
         "Success",
         "Signup successful! Please check your email to verify your account before signing in."

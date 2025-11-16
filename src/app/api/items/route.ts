@@ -49,7 +49,7 @@ export async function POST(request: Request) {
       latitude,
       longitude,
       imageUrl: imageUri ?? null,
-      userId, // 如果你的 Place 里有 userId 字段，记录是谁创建的
+      userId, 
     },
   });
 

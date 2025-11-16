@@ -111,8 +111,8 @@ Make sure that host/IP in this URL matches `EXPO_DEV_ORIGIN` in the backend `.en
     - Home now shows the Sign Out button and the top-right avatar becomes filled.
 
 4. Sign out
-    - Option A: Bottom Sign Out button on home → call `authClient.signOut()` and show a "Signed out" message.
-    - Option B: Top-right avatar → show an alert confirmation; on confirm call `authClient.signOut()` and show a "Signed out" message.
+
+    - Top-right avatar → show an alert confirmation; on confirm call `authClient.signOut()` and show a "Signed out" message.
 
 5. Next time the app opens
     - If the session is still valid, `useSession()` returns the user:

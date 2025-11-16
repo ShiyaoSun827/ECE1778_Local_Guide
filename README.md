@@ -47,3 +47,5 @@ Default admin account:
 
 - **Email**: `admin@example.com`
 - **Password**: `admin123`
+
+备注：Shiyao Sun: 我先在backendd文件夹里，写几个页面,用于验证后端的 CRUD 功能：新增、修改、删除、列表、详情；以及邮箱验证，登录登出等功能，前端可以直接拿去用。

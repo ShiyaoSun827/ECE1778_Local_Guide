@@ -12,7 +12,18 @@
 
 ```
 DATABASE_URL="postgresql://username:password@localhost:5432/paper_management?schema=public"
+
+GMAIL_USER="localxiaoyang@gmail.com"
+GMAIL_APP_PASSWORD="qomdywkvbpacxjzh" 
+
+
 ```
+**In `frontend/.env`:**
+
+```
+EXPO_PUBLIC_API_BASE_URL="use your own backend 'Network' IP "
+```
+
 ### Database Initialization
 
 Use the following Prisma commands in the `backend` directory:

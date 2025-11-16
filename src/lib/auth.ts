@@ -5,26 +5,22 @@ import { nextCookies } from "better-auth/next-js";
 import { admin } from "better-auth/plugins";
 import { prisma } from "@/lib/prisma";
 import { sendEmail } from "@/lib/email";
-import { expo } from "@better-auth/expo";
-export const auth = betterAuth({
+import { expo } from "@better-auth/expo";  
 
+export const auth = betterAuth({
   database: prismaAdapter(prisma, {
     provider: "postgresql",
   }),
 
-
   emailAndPassword: {
     enabled: true,
-    requireEmailVerification: true,  
+    requireEmailVerification: true,
   },
 
-
   emailVerification: {
- 
     sendOnSignUp: true,
     autoSignInAfterVerification: true,
     async sendVerificationEmail({ user, url, token }, request) {
-   
       await sendEmail({
         to: user.email,
         subject: "Verify your Local Guide account",
@@ -39,10 +35,13 @@ export const auth = betterAuth({
   },
 
 
+  trustedOrigins: ["localguide://*"],
+
   plugins: [
     nextCookies(),
     admin({
       adminRoles: ["admin", "superadmin"],
     }),
+    expo(),  
   ],
 });

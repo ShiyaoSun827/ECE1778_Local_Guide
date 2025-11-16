@@ -29,8 +29,7 @@
         "WRITE_EXTERNAL_STORAGE"
       ]
     },
-    "web": {
-    },
+    "web": {},
     "plugins": [
       [
         "expo-location",
@@ -53,7 +52,6 @@
         }
       ]
     ],
-    "scheme": "local-guide"
+    "scheme": "localguide"   
   }
 }
-

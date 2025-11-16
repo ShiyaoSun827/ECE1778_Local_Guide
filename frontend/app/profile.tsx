@@ -16,7 +16,7 @@ export default function ProfileScreen() {
   const router = useRouter();
   const { data: session, isLoading } = authClient.useSession();
 
-  // 如果没登录，自动踢回 /signin
+  // 如果没登录，回到/signin
   useEffect(() => {
     if (!isLoading && !session?.user) {
       router.replace("/signin");

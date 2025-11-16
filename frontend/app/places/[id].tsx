@@ -1,3 +1,4 @@
+//frontend/app/places/[id].tsx
 import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Image, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';

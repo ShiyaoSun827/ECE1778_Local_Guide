@@ -3,6 +3,7 @@
  * Provides global state management using Context API
  * Integrates with AsyncStorage for persistence
  */
+//frontend/context/PlacesContext.tsx
 import React, { createContext, useContext, ReactNode, useState, useEffect, useCallback } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Place, PlaceFormData } from '../types';

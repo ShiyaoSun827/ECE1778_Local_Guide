@@ -16,7 +16,7 @@ export default function ProfileScreen() {
   const router = useRouter();
   const { data: session, isLoading } = authClient.useSession();
 
-  // 如果没登录，回到/signin
+  // If not logged in, redirect to /signin
   useEffect(() => {
     if (!isLoading && !session?.user) {
       router.replace("/signin");
@@ -28,7 +28,7 @@ export default function ProfileScreen() {
   const handleLogout = async () => {
     try {
       await authClient.signOut();
-      // 清掉 session 后，跳回登录页
+      // After clearing session, redirect to sign in page
       router.replace("/signin");
     } catch (err: any) {
       console.log("Logout error:", err);
@@ -36,7 +36,7 @@ export default function ProfileScreen() {
     }
   };
 
-  // 加一个简单的“加载中”占位
+  // Simple loading placeholder
   if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
@@ -47,10 +47,10 @@ export default function ProfileScreen() {
 
   return (
     <ScrollView style={styles.container}>
-      {/* 顶部彩色背景 */}
+      {/* Top colored background */}
       <View style={styles.header} />
 
-      {/* 头像 */}
+      {/* Avatar */}
       <Image
         style={styles.avatar}
         source={{
@@ -60,7 +60,7 @@ export default function ProfileScreen() {
         }}
       />
 
-      {/* 主要信息卡片 */}
+      {/* Main info card */}
       <View style={styles.body}>
         <View style={styles.card}>
           <Text style={styles.name}>{user?.name ?? "Local Guide User"}</Text>
@@ -83,7 +83,7 @@ export default function ProfileScreen() {
           </View>
         </View>
 
-        {/* 功能按钮区 */}
+        {/* Action buttons section */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>My Activity</Text>
 
@@ -102,7 +102,7 @@ export default function ProfileScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* 设置 / 关于 区 */}
+        {/* Settings / About section */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Settings</Text>
 

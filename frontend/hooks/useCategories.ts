@@ -13,10 +13,6 @@ export function useCategories() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    loadCategories();
-  }, []);
-
   const loadCategories = useCallback(async () => {
     try {
       setLoading(true);
@@ -48,6 +44,10 @@ export function useCategories() {
       setLoading(false);
     }
   }, []);
+
+  useEffect(() => {
+    loadCategories();
+  }, [loadCategories]);
 
   const refreshCategories = useCallback(async () => {
     await loadCategories();

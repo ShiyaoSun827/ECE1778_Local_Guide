@@ -1,5 +1,5 @@
 // frontend/app/add/index.tsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { View, StyleSheet, ScrollView, Alert, Text } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useForm, Controller } from 'react-hook-form';
@@ -8,7 +8,7 @@ import { ScreenContainer, TextField, Button, PhotoPicker } from '../../component
 import { usePlaces, useLocationPermission, usePhotoPicker } from '../../hooks';
 import { PlaceFormData } from '../../types';
 import { validation, spacing, colors, typography } from '../../theme';
-// ✅ 新增：引入 authClient，用来区分游客 / 登录用户
+// Import authClient to distinguish between guest and logged-in users
 import { authClient } from '../../lib/authClient';
 
 export default function AddPlaceScreen() {
@@ -24,8 +24,11 @@ export default function AddPlaceScreen() {
   const [loading, setLoading] = useState(false);
   const [address, setAddress] = useState('');
   const [geocodingLoading, setGeocodingLoading] = useState(false);
+  
+  // Use ref to track if parameters have been set to avoid infinite loop from repeated updates
+  const lastParamsRef = useRef<string>('');
 
-  // ✅ 新增：当前登录状态（游客 / 已登录用户）
+  // Get current session state (guest or logged-in user)
   const { data: session } = authClient.useSession();
 
   const {
@@ -33,7 +36,6 @@ export default function AddPlaceScreen() {
     handleSubmit,
     formState: { errors },
     setValue,
-    watch,
   } = useForm<PlaceFormData>({
     defaultValues: {
       name: '',
@@ -44,23 +46,35 @@ export default function AddPlaceScreen() {
     },
   });
 
-  const watchedLatitude = watch('latitude');
-  const watchedLongitude = watch('longitude');
-
   // Pre-fill coordinates if passed from map
+  // Fix: Use specific parameter values as dependencies and use ref to avoid infinite loop from repeated updates
   useEffect(() => {
-    if (params.latitude && params.longitude) {
-      const lat = parseFloat(params.latitude);
-      const lon = parseFloat(params.longitude);
-      if (!isNaN(lat) && !isNaN(lon)) {
-        setValue('latitude', lat);
-        setValue('longitude', lon);
-        if (params.address) {
-          setAddress(params.address);
-        }
-      }
+    if (!params.latitude || !params.longitude) {
+      return;
     }
-  }, [params, setValue]);
+
+    const paramsKey = `${params.latitude}_${params.longitude}_${params.address || ''}`;
+    
+    // Skip if parameters haven't changed to avoid repeated updates
+    if (paramsKey === lastParamsRef.current) {
+      return;
+    }
+
+    const lat = parseFloat(params.latitude);
+    const lon = parseFloat(params.longitude);
+    
+    if (!isNaN(lat) && !isNaN(lon)) {
+      // Set values with shouldValidate: false to avoid triggering validation and re-renders
+      setValue('latitude', lat, { shouldValidate: false, shouldDirty: false });
+      setValue('longitude', lon, { shouldValidate: false, shouldDirty: false });
+      if (params.address) {
+        setAddress(params.address);
+      }
+      // Record the set parameters to avoid repeated updates
+      lastParamsRef.current = paramsKey;
+    }
+    // Only depend on specific parameter values, not setValue (it's stable) or watch values (to avoid loop)
+  }, [params.latitude, params.longitude, params.address, setValue]);
 
   const handleUseCurrentLocation = async () => {
     const currentLocation = await getCurrentLocation();
@@ -134,7 +148,7 @@ export default function AddPlaceScreen() {
       return;
     }
 
-    // ✅ 核心改动：这里先判断有没有登录（有 session = 登录用户，没 session = 游客）
+    // Core change: Check if user is logged in (has session = logged-in user, no session = guest)
     if (!session?.user) {
       Alert.alert(
         'Sign in required',

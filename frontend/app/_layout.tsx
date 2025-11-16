@@ -9,9 +9,9 @@ import { Pressable, Alert } from "react-native";
 import { FontAwesome } from "@expo/vector-icons";
 import { authClient } from "../lib/authClient";
 
-// 右上角用户按钮：
-// 1）未登录：跳转到 /signin
-// 2）已登录：弹窗确认是否退出登录，确认后 signOut + 提示成功
+// Top-right user button:
+// 1) Not logged in: navigate to /signin
+// 2) Logged in: show confirmation dialog to sign out, then signOut + show success message
 function HeaderAuthButton() {
   const router = useRouter();
   const { data: session, isPending } = authClient.useSession();
@@ -20,10 +20,10 @@ function HeaderAuthButton() {
 
   const handlePress = () => {
     if (!isLoggedIn) {
-      // 未登录：进入登录页（登录页里有“注册”按钮）
+      // Not logged in: navigate to sign in page (which has a "Sign Up" button)
       router.push("/signin");
     } else {
-      // 已登录：弹出确认框
+      // Logged in: show confirmation dialog
       Alert.alert(
         "Sign out",
         "Do you want to sign out?",
@@ -39,7 +39,7 @@ function HeaderAuthButton() {
               try {
                 await authClient.signOut();
                 Alert.alert("Success", "You have been signed out.");
-                // 如果你希望登出后强制回首页，可以再加：
+                // If you want to force redirect to home page after logout, you can add:
                 // router.replace("/");
               } catch (err: any) {
                 console.log("Logout error:", err);
@@ -60,7 +60,7 @@ function HeaderAuthButton() {
       disabled={isPending}
     >
       <FontAwesome
-        // 已登录：实心头像；未登录：空心头像
+        // Logged in: filled avatar; not logged in: outline avatar
         name={isLoggedIn ? "user-circle" : "user-o"}
         size={22}
         color="#fff"
@@ -73,7 +73,7 @@ function AppContent() {
   const { scheduleDailyReminder } = useNotifications();
 
   useEffect(() => {
-    // App 启动时安排每日提醒
+    // Schedule daily reminder when app starts
     scheduleDailyReminder();
   }, [scheduleDailyReminder]);
 
@@ -89,7 +89,7 @@ function AppContent() {
           headerTitleStyle: {
             fontWeight: "bold",
           },
-          // 所有页面右上角统一使用 HeaderAuthButton
+          // All pages use HeaderAuthButton in the top-right corner
           headerRight: () => <HeaderAuthButton />,
         }}
       >
@@ -124,7 +124,7 @@ function AppContent() {
             title: "Favorites",
           }}
         />
-        {/* 登录 / 注册页 */}
+        {/* Sign in / Sign up pages */}
         <Stack.Screen
           name="signin"
           options={{

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import * as Location from 'expo-location';
 
 export const useLocationPermission = () => {
@@ -6,11 +6,7 @@ export const useLocationPermission = () => {
   const [location, setLocation] = useState<Location.LocationObject | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    requestPermission();
-  }, []);
-
-  const requestPermission = async () => {
+  const requestPermission = useCallback(async () => {
     try {
       setLoading(true);
       const { status } = await Location.requestForegroundPermissionsAsync();
@@ -26,9 +22,13 @@ export const useLocationPermission = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const getCurrentLocation = async () => {
+  useEffect(() => {
+    requestPermission();
+  }, [requestPermission]);
+
+  const getCurrentLocation = useCallback(async () => {
     if (!hasPermission) {
       await requestPermission();
     }
@@ -38,7 +38,7 @@ export const useLocationPermission = () => {
       return currentLocation;
     }
     return null;
-  };
+  }, [hasPermission, requestPermission]);
 
   return {
     hasPermission,

@@ -19,7 +19,7 @@ export default function SignInScreen() {
 
   const { data: session, isLoading } = authClient.useSession();
 
-  // 如果已经登录，又访问 /signin，就直接跳回首页
+  // If already logged in and accessing /signin, redirect to home page
   useEffect(() => {
     if (!isLoading && session?.user) {
       console.log("Already signed in, redirect to /");

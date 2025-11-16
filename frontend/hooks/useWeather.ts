@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { WeatherData } from '../types';
 import { getWeatherData } from '../utils/weather';
 
@@ -7,13 +7,7 @@ export const useWeather = (latitude?: number, longitude?: number) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (latitude !== undefined && longitude !== undefined) {
-      fetchWeather();
-    }
-  }, [latitude, longitude]);
-
-  const fetchWeather = async () => {
+  const fetchWeather = useCallback(async () => {
     if (latitude === undefined || longitude === undefined) return;
 
     try {
@@ -27,7 +21,13 @@ export const useWeather = (latitude?: number, longitude?: number) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [latitude, longitude]);
+
+  useEffect(() => {
+    if (latitude !== undefined && longitude !== undefined) {
+      fetchWeather();
+    }
+  }, [latitude, longitude, fetchWeather]);
 
   return {
     weather,

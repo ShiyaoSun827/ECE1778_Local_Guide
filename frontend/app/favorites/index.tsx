@@ -1,5 +1,5 @@
 // frontend/app/favorites/index.tsx
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { StyleSheet, TouchableOpacity, Text, Alert } from "react-native";
 import { useRouter } from "expo-router";
 import {
@@ -29,49 +29,47 @@ export default function FavoritesScreen() {
   const [favorites, setFavorites] = useState<FavoritePlace[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const loadFavorites = async () => {
-  try {
-    setLoading(true);
+  const loadFavorites = useCallback(async () => {
+    try {
+      setLoading(true);
 
-    const cookies = authClient.getCookie();
-    const res = await fetch(`${BACKEND_BASE_URL}/api/favorites`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        ...(cookies ? { Cookie: cookies } : {}),
-      },
-    });
+      const cookies = authClient.getCookie();
+      const res = await fetch(`${BACKEND_BASE_URL}/api/favorites`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          ...(cookies ? { Cookie: cookies } : {}),
+        },
+      });
 
-    if (res.status === 401) {
-      setFavorites([]);
-      return;
+      if (res.status === 401) {
+        setFavorites([]);
+        return;
+      }
+
+      if (!res.ok) {
+        const text = await res.text();
+        console.error("Backend /api/favorites error text:", text);
+        throw new Error(text || `HTTP ${res.status}`);
+      }
+
+      const data = (await res.json()) as FavoritePlace[];
+      setFavorites(data ?? []);
+    } catch (err: any) {
+      console.error("Load favorites error:", err);
+      Alert.alert("Error", err?.message ?? "Failed to load favorites");
+    } finally {
+      setLoading(false);
     }
-
-    if (!res.ok) {
-      const text = await res.text();
-      console.error("Backend /api/favorites error text:", text);
-      throw new Error(text || `HTTP ${res.status}`);
-    }
-
-    const data = (await res.json()) as FavoritePlace[];
-    setFavorites(data ?? []);
-  } catch (err: any) {
-    console.error("Load favorites error:", err);
-    Alert.alert("Error", err?.message ?? "Failed to load favorites");
-  } finally {
-    setLoading(false);
-  }
-};
-
+  }, []);
 
   useEffect(() => {
     if (session?.user) {
-      
       loadFavorites();
     } else if (!isPending) {
       setFavorites([]);
     }
-  }, [session?.user?.id, isPending]);
+  }, [session?.user?.id, isPending, loadFavorites]);
 
   const handlePlacePress = (id: string) => {
     router.push(`/places/${id}`);
@@ -88,7 +86,7 @@ export default function FavoritesScreen() {
     router.push("/add");
   };
 
-  // 正在检查 session 或加载收藏
+  // Checking session or loading favorites
   if (isPending || loading) {
     return (
       <ScreenContainer>
@@ -97,7 +95,7 @@ export default function FavoritesScreen() {
     );
   }
 
-  // 没登录：游客模式
+  // Not logged in: guest mode
   if (!session?.user) {
     return (
       <ScreenContainer>
@@ -115,7 +113,7 @@ export default function FavoritesScreen() {
     );
   }
 
-  // 已登录但没有收藏
+  // Logged in but no favorites
   if (favorites.length === 0) {
     return (
       <ScreenContainer>
@@ -130,7 +128,7 @@ export default function FavoritesScreen() {
     );
   }
 
-  // 已登录 + 有收藏
+  // Logged in + has favorites
   return (
     <ScreenContainer>
       {favorites.length === 0 ? (

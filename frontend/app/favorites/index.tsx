@@ -10,9 +10,9 @@ import {
 } from "../../components";
 import { colors, spacing } from "../../theme";
 import { authClient } from "../../lib/authClient";
+import { API_BASE_URL } from "../../lib/config";
 
-
-const BACKEND_BASE_URL = "http://127.0.0.1:3000";
+const BACKEND_BASE_URL = API_BASE_URL;
 
 type FavoritePlace = {
   id: string;

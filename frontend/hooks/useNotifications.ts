@@ -37,13 +37,21 @@ export function useNotifications() {
       });
 
     return () => {
-      if (notificationListener.current) {
-        Notifications.removeNotificationSubscription(
-          notificationListener.current
-        );
-      }
-      if (responseListener.current) {
-        Notifications.removeNotificationSubscription(responseListener.current);
+      // In Expo Go, removeNotificationSubscription may not be available
+      if (typeof Notifications.removeNotificationSubscription === 'function') {
+        if (notificationListener.current) {
+          Notifications.removeNotificationSubscription(
+            notificationListener.current
+          );
+        }
+        if (responseListener.current) {
+          Notifications.removeNotificationSubscription(responseListener.current);
+        }
+      } else {
+        // In Expo Go, subscriptions are automatically cleaned up
+        // Just clear the refs
+        notificationListener.current = undefined;
+        responseListener.current = undefined;
       }
     };
   }, []);
@@ -152,8 +160,15 @@ async function registerForPushNotificationsAsync() {
     return;
   }
 
-  token = (await Notifications.getExpoPushTokenAsync()).data;
-  console.log('Push token:', token);
+  try {
+    // Try to get push token, but it requires projectId in app.json
+    // For local notifications, this is optional
+    token = (await Notifications.getExpoPushTokenAsync()).data;
+    console.log('Push token:', token);
+  } catch (error) {
+    // If projectId is not configured, that's okay - local notifications still work
+    console.log('Push token not available (projectId not configured). Local notifications will still work.');
+  }
 
   return token;
 }

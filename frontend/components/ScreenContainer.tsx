@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, StyleSheet, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, spacing } from '../theme';
 
 interface ScreenContainerProps {
@@ -14,6 +14,10 @@ export const ScreenContainer: React.FC<ScreenContainerProps> = ({
   scrollable = false,
   style,
 }) => {
+  const insets = useSafeAreaInsets();
+  // Use a smaller top inset to reduce spacing
+  const topInset = Math.max(insets.top - spacing.xl, 0);
+
   const content = scrollable ? (
     <ScrollView
       style={styles.scrollView}
@@ -27,10 +31,10 @@ export const ScreenContainer: React.FC<ScreenContainerProps> = ({
   );
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={styles.container} edges={[]}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.keyboardView}
+        style={[styles.keyboardView, { paddingTop: topInset }]}
       >
         {content}
       </KeyboardAvoidingView>
@@ -51,7 +55,10 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    padding: spacing.md,
+    paddingLeft: spacing.md,
+    paddingRight: spacing.md,
+    paddingBottom: spacing.md,
+    paddingTop: -spacing.md,
   },
 });
 

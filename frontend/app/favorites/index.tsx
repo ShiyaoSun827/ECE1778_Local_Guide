@@ -1,6 +1,6 @@
 // frontend/app/favorites/index.tsx
 import React, { useMemo } from "react";
-import { StyleSheet, TouchableOpacity, Text, Alert } from "react-native";
+import { StyleSheet, TouchableOpacity, Text, Alert, ScrollView } from "react-native";
 import { useRouter } from "expo-router";
 import {
   ScreenContainer,
@@ -78,14 +78,20 @@ export default function FavoritesScreen() {
   // Logged in + has favorites
   return (
     <ScreenContainer>
-      {favorites.map((item) => (
-        <PlaceCard
-          key={item.id}
-          place={item}
-          onPress={() => handlePlacePress(item.id)}
-          onToggleFavorite={() => toggleFavorite(item.id)}
-        />
-      ))}
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {favorites.map((item) => (
+          <PlaceCard
+            key={item.id}
+            place={item}
+            onPress={() => handlePlacePress(item.id)}
+            onToggleFavorite={() => toggleFavorite(item.id)}
+          />
+        ))}
+      </ScrollView>
 
       <TouchableOpacity style={styles.fab} onPress={handleAddPress}>
         <Text style={styles.fabText}>+</Text>
@@ -95,6 +101,15 @@ export default function FavoritesScreen() {
 }
 
 const styles = StyleSheet.create({
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingLeft: spacing.md,
+    paddingRight: spacing.md,
+    paddingTop: -spacing.md,
+    paddingBottom: spacing.xxl,
+  },
   list: {
     paddingBottom: spacing.xxl,
   },

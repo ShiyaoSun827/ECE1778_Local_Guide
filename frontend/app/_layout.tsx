@@ -105,14 +105,14 @@ function AppContent() {
           headerTitleStyle: {
             fontWeight: "bold",
           },
-          // All pages use HeaderAuthButton in the top-right corner
-          headerRight: () => <HeaderAuthButton />,
         }}
       >
         <Stack.Screen
           name="index"
           options={{
             title: "Local Guide",
+            // Only show logout button on home screen
+            headerRight: () => <HeaderAuthButton />,
           }}
         />
         <Stack.Screen

@@ -214,6 +214,37 @@ export default function HomeScreen() {
 
         <View style={styles.sectionHeader}>
           <View>
+            <Text style={styles.sectionEyebrow}>Your collection</Text>
+            <Text style={styles.sectionTitle}>Saved places</Text>
+          </View>
+          <TouchableOpacity onPress={handleAddPress}>
+            <Text style={styles.sectionAction}>Add</Text>
+          </TouchableOpacity>
+        </View>
+
+        {placesLoading ? (
+          <View style={styles.loadingContainer}>
+            <LoadingSpinner />
+          </View>
+        ) : myPlaces.length === 0 ? (
+          <EmptyState
+            title="No saved places yet"
+            message="Capture your own spots to build a personal guide."
+          />
+        ) : (
+          myPlaces.map((place) => (
+            <PlaceCard
+              key={place.id}
+              place={place}
+              onPress={() => handlePlacePress(place.id)}
+              onToggleFavorite={() => toggleFavorite(place.id)}
+              onDelete={() => handleDeletePlace(place.id, place.name)}
+            />
+          ))
+        )}
+
+        <View style={styles.sectionHeader}>
+          <View>
             <Text style={styles.sectionEyebrow}>
               {hasActiveSearch ? "Search results" : "Discover nearby"}
             </Text>
@@ -250,37 +281,6 @@ export default function HomeScreen() {
             {limitedExploreList.map(renderPlaceCard)}
           </View>
         )}
-
-        <View style={styles.sectionHeader}>
-          <View>
-            <Text style={styles.sectionEyebrow}>Your collection</Text>
-            <Text style={styles.sectionTitle}>Saved places</Text>
-          </View>
-          <TouchableOpacity onPress={handleAddPress}>
-            <Text style={styles.sectionAction}>Add</Text>
-          </TouchableOpacity>
-        </View>
-
-        {placesLoading ? (
-          <View style={styles.loadingContainer}>
-            <LoadingSpinner />
-          </View>
-        ) : myPlaces.length === 0 ? (
-          <EmptyState
-            title="No saved places yet"
-            message="Capture your own spots to build a personal guide."
-          />
-        ) : (
-          myPlaces.map((place) => (
-            <PlaceCard
-              key={place.id}
-              place={place}
-              onPress={() => handlePlacePress(place.id)}
-              onToggleFavorite={() => toggleFavorite(place.id)}
-              onDelete={() => handleDeletePlace(place.id, place.name)}
-            />
-          ))
-        )}
       </ScrollView>
 
       <TouchableOpacity style={styles.fab} onPress={handleAddPress}>
@@ -295,7 +295,9 @@ const styles = StyleSheet.create({
     paddingTop: 0,
   },
   scrollContent: {
-    padding: spacing.md,
+    paddingLeft: spacing.md,
+    paddingRight: spacing.md,
+    paddingTop: -spacing.md,
     paddingBottom: spacing.xxl,
   },
   hero: {

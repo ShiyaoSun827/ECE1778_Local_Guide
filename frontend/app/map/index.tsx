@@ -489,36 +489,6 @@ export default function MapScreen() {
                           onPress={handleViewDetails}
                           style={styles.detailsButton}
                         />
-                        {selectedPlace.googleMapsUri && (
-                          <Button
-                            title="Open in Google Maps"
-                            onPress={() =>
-                              handleOpenMaps(selectedPlace.googleMapsUri)
-                            }
-                            variant="outline"
-                            style={styles.detailsButton}
-                          />
-                        )}
-                        {selectedPlace.websiteUri && (
-                          <Button
-                            title="Visit website"
-                            onPress={() =>
-                              handleOpenWebsite(selectedPlace.websiteUri)
-                            }
-                            variant="outline"
-                            style={styles.detailsButton}
-                          />
-                        )}
-                        {selectedPlace.phoneNumber && (
-                          <Button
-                            title={`Call ${selectedPlace.phoneNumber}`}
-                            onPress={() =>
-                              handleDial(selectedPlace.phoneNumber)
-                            }
-                            variant="outline"
-                            style={styles.detailsButton}
-                          />
-                        )}
                       </View>
                     </ScrollView>
                   </>

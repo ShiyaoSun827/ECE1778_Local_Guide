@@ -5,8 +5,7 @@ import { StatusBar } from "expo-status-bar";
 import { PlacesProvider } from "../context/PlacesContext";
 import { useNotifications } from "../hooks/useNotifications";
 
-import { Pressable, Alert } from "react-native";
-import { FontAwesome } from "@expo/vector-icons";
+import { TouchableOpacity, Alert, StyleSheet, Text } from "react-native";
 import { authClient } from "../lib/authClient";
 
 // Top-right user button:
@@ -54,20 +53,37 @@ function HeaderAuthButton() {
   };
 
   return (
-    <Pressable
+    <TouchableOpacity
       onPress={handlePress}
-      style={{ marginRight: 12 }}
+      style={styles.button}
       disabled={isPending}
+      activeOpacity={0.7}
     >
-      <FontAwesome
-        // Logged in: filled avatar; not logged in: outline avatar
-        name={isLoggedIn ? "user-circle" : "user-o"}
-        size={22}
-        color="#fff"
-      />
-    </Pressable>
+      <Text style={styles.buttonText} numberOfLines={1}>
+        {isLoggedIn ? "Logout" : "Login"}
+      </Text>
+    </TouchableOpacity>
   );
 }
+
+const styles = StyleSheet.create({
+  button: {
+    marginRight: 12,
+    paddingLeft: 12,
+    paddingRight: 0,
+    paddingVertical: 6,
+    justifyContent: "center",
+    alignItems: "flex-end",
+    alignSelf: "flex-end",
+  },
+  buttonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "600",
+    textAlign: "right",
+    textAlignVertical: "center",
+  },
+});
 
 function AppContent() {
   const { scheduleDailyReminder } = useNotifications();

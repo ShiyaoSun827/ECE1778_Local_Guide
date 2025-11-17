@@ -74,16 +74,20 @@
 ### `src/.env` (or `.env.local`)
 ```env
 DATABASE_URL="postgresql://user:pass@localhost:5432/local_guide?schema=public"
-BETTER_AUTH_SECRET="replace_with_a_64_char_secret"
-EXPO_DEV_ORIGIN="exp://192.168.0.10:8081"          # must match Expo dev server origin
-GMAIL_USER="you@gmail.com"
-GMAIL_APP_PASSWORD="gmail_app_password"
+
+BETTER_AUTH_SECRET=0fa8b7c38d47e6250c4d1dd2e8045afbbf5901c1c0e06f8e870fe5b029d7a3cc
+
+
+GMAIL_USER="localxiaoyang@gmail.com"
+GMAIL_APP_PASSWORD="qomdywkvbpacxjzh"
 ```
 
 ### `frontend/.env`
 ```env
-EXPO_PUBLIC_API_BASE_URL="http://192.168.0.10:3000"   # backend reachable from device
-EXPO_PUBLIC_GOOGLE_PLACES_API_KEY="AIzaSy..."
+EXPO_PUBLIC_API_BASE_URL="http://192.168.2.11:3000"   # use backend address as shown in the actual command line
+
+# Google Places API Key
+EXPO_PUBLIC_GOOGLE_PLACES_API_KEY=AIzaSyAU6vsj5SAkxy1or3rjq66VoMSnshNTl5s
 EXPO_PUBLIC_OPENWEATHER_API_KEY="your_openweather_key"
 ```
 

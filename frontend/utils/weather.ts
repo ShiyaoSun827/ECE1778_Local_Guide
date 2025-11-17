@@ -1,58 +1,68 @@
 import { WeatherData } from "../types";
 
-const WEATHER_API_KEY =
-  process.env.EXPO_PUBLIC_OPENWEATHER_API_KEY ??
-  process.env.OPENWEATHER_API_KEY ??
-  "f08afc21c7d4a33a3b0d0f2794c3459f"; // fallback for dev
+// Use Open-Meteo API (free, no API key required)
+const WEATHER_BASE_URL = "https://api.open-meteo.com/v1/forecast";
 
-const WEATHER_BASE_URL = "https://api.openweathermap.org/data/2.5/weather";
+// Weather condition mapping from weather code to readable text
+const getWeatherCondition = (code: number): string => {
+  // WMO Weather interpretation codes (WW)
+  if (code === 0) return "Clear";
+  if (code <= 3) return "Cloudy";
+  if (code <= 49) return "Foggy";
+  if (code <= 59) return "Drizzle";
+  if (code <= 69) return "Rain";
+  if (code <= 79) return "Snow";
+  if (code <= 84) return "Rain";
+  if (code <= 86) return "Snow";
+  if (code <= 99) return "Thunderstorm";
+  return "Weather";
+};
 
-const kelvinToCelsius = (kelvin: number) =>
-  Math.round((kelvin - 273.15) * 10) / 10;
+const getWeatherDescription = (code: number): string => {
+  if (code === 0) return "Clear sky";
+  if (code <= 3) return "Partly cloudy";
+  if (code <= 49) return "Foggy conditions";
+  if (code <= 59) return "Light drizzle";
+  if (code <= 69) return "Light rain";
+  if (code <= 79) return "Light snow";
+  if (code <= 84) return "Heavy rain";
+  if (code <= 86) return "Heavy snow";
+  if (code <= 99) return "Thunderstorm";
+  return "Weather data available";
+};
 
 export const getWeatherData = async (
   latitude: number,
   longitude: number
 ): Promise<WeatherData> => {
-  if (!WEATHER_API_KEY) {
-    throw new Error("OpenWeather API key missing");
-  }
-
   const params = new URLSearchParams({
-    lat: String(latitude),
-    lon: String(longitude),
-    appid: WEATHER_API_KEY,
-    units: "metric",
+    latitude: String(latitude),
+    longitude: String(longitude),
+    current: "temperature_2m,weather_code",
+    timezone: "auto",
   });
 
   const response = await fetch(`${WEATHER_BASE_URL}?${params.toString()}`);
   if (!response.ok) {
     const text = await response.text();
     throw new Error(
-      `OpenWeather request failed (${response.status}): ${text}`
+      `Weather API request failed (${response.status}): ${text}`
     );
   }
 
   const data = await response.json();
 
-  const condition = data.weather?.[0]?.main ?? "Weather";
-  const description =
-    data.weather?.[0]?.description ?? "Weather data currently unavailable.";
-  const temperature =
-    typeof data.main?.temp === "number"
-      ? Math.round(data.main.temp)
-      : kelvinToCelsius(data.main?.temp ?? 298.15);
+  const current = data.current;
+  const temperature = Math.round(current?.temperature_2m ?? 20);
+  const weatherCode = current?.weather_code ?? 0;
+  const condition = getWeatherCondition(weatherCode);
+  const description = getWeatherDescription(weatherCode);
 
   return {
     temperature,
     condition,
-    description: description.replace(
-      /\b\w/g,
-      (ch: string) => ch.toUpperCase()
-    ),
-    icon: data.weather?.[0]?.icon
-      ? `https://openweathermap.org/img/wn/${data.weather[0].icon}@2x.png`
-      : undefined,
+    description,
+    icon: undefined, // Open-Meteo doesn't provide icons, but you can add your own icon mapping if needed
   };
 };
 

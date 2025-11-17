@@ -82,6 +82,7 @@ export default function AddPlaceScreen() {
       setValue('latitude', currentLocation.coords.latitude);
       setValue('longitude', currentLocation.coords.longitude);
       setAddress(''); // Clear address when using current location
+      Alert.alert('Success', 'Updated to current location');
     } else {
       Alert.alert('Error', 'Could not get current location');
     }

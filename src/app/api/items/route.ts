@@ -10,6 +10,19 @@ import { prisma } from "@/lib/prisma";
 export async function GET() {
   const items = await prisma.place.findMany({
     orderBy: { createdAt: "desc" },
+    select: {
+      id: true,
+      title: true,
+      description: true,
+      address: true,
+      latitude: true,
+      longitude: true,
+      imageUri: true,
+      isFavorite: true,
+      createdAt: true,
+      updatedAt: true,
+      userId: true,
+    },
   });
 
   return NextResponse.json(items);
@@ -24,7 +37,6 @@ export async function POST(request: Request) {
   const session = await auth.api.getSession({ headers: request.headers });
 
   if (!session?.user) {
-    // 游客不允许新增
     return NextResponse.json(
       { error: "Unauthorized - please sign in to add places." },
       { status: 401 }
@@ -33,23 +45,36 @@ export async function POST(request: Request) {
 
   const userId = session.user.id;
   const body = await request.json();
-  const { name, description, latitude, longitude, imageUri } = body;
+  const {
+    name,
+    title,
+    description,
+    latitude,
+    longitude,
+    imageUri,
+    address,
+    categoryId,
+  } = body ?? {};
 
-  if (!name || typeof latitude !== "number" || typeof longitude !== "number") {
+  const placeTitle = (title ?? name ?? "").toString().trim();
+
+  if (!placeTitle || typeof latitude !== "number" || typeof longitude !== "number") {
     return NextResponse.json(
-      { error: "name, latitude and longitude are required" },
+      { error: "title (or name), latitude and longitude are required" },
       { status: 400 }
     );
   }
 
   const newPlace = await prisma.place.create({
     data: {
-      name,
+      title: placeTitle,
       description: description ?? "",
+      address: address ?? null,
       latitude,
       longitude,
-      imageUrl: imageUri ?? null,
-      userId, 
+      imageUri: imageUri ?? null,
+      userId,
+      categoryId: categoryId ?? null,
     },
   });
 

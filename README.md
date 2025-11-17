@@ -1,135 +1,175 @@
-### Environment Setup and Configuration
-- Ensure **PostgreSQL v16** is installed and running locally.
-    - Start the database service:
-        - `net start postgresql-x64-16`(Windows)
-        - `brew services start postgresql@16`(Mac OS)
-- Navigate to the project root and install all dependencies:
-    - `cd backend`
-    - `npm install`
-- Ensure the following environment variables are set up:
+# Local Guide
 
-**In `src/.env`:**
-
-```
-DATABASE_URL="postgresql://username:password@localhost:5432/paper_management?schema=public"
-
-GMAIL_USER="localxiaoyang@gmail.com"
-GMAIL_APP_PASSWORD="qomdywkvbpacxjzh" 
-
-
-```
-**In `frontend/.env`:**
-
-```
-EXPO_PUBLIC_API_BASE_URL="use your own backend 'Network' IP "
-```
-
-### Database Initialization
-
-Use the following Prisma commands in the `backend` directory:
-
-- `npx prisma format`
-- `npx prisma migrate reset`
-- `npx prisma generate`
-- `npx prisma migrate dev`
-
-If issues arise, try:
-
-- `npx @better-auth/cli migrate`
-
-
-### Start the backend
-
-From the repository root:
-
-```bash
-npm run dev
-```
-
-The backend listens by default at: `http://127.0.0.1:3000`
-
-Provided endpoints:
-
-- `/api/auth/...` — Better Auth: sign up / sign in / sign out / session / email verification
-- `/api/places`, `/api/favorites`, etc. — Local Guide business APIs (used by the mobile app)
+> A modern travel companion built with **Next.js 16**, **Better Auth**, **Prisma/PostgreSQL**, and a **React-Native (Expo)** client. Discover curated Google Places recommendations, save favorites, and manage your own spots across devices.
 
 ---
 
-## Frontend (React Native + Expo)
+## Table of Contents
+1. [Features](#features)
+2. [Architecture](#architecture)
+3. [Prerequisites](#prerequisites)
+4. [Environment Variables](#environment-variables)
+5. [Backend Setup (`/src`)](#backend-setup-src)
+6. [Frontend Setup (`/frontend`)](#frontend-setup-frontend)
+7. [Running the Full Stack](#running-the-full-stack)
+8. [Development Tips](#development-tips)
+9. [Troubleshooting](#troubleshooting)
+10. [License](#license)
 
-The frontend is in the `frontend/` directory.
+---
 
-### Install dependencies
+## Features
+- **Authentication & Roles**  
+  Email/password auth with verification, sessions, and admin roles powered by Better Auth.
 
+- **Smart Discovery**  
+  Google Places nearby + text search with throttling, caching, and graceful fallbacks when quota limits are hit.
+
+- **Interactive Map**  
+  Tap anywhere to drop a pin, auto-resolve the address, preview nearby spots, or add the location to your list.
+
+- **Favorites that stay in sync**  
+  Starring a place updates the shared context instantly; the favorites screen simply reads from `getFavorites()`.
+
+- **Weather context**  
+  Live OpenWeather data (temperature, condition, icon) on every place detail.
+
+- **Offline-friendly**  
+  Custom places and favorites persist locally via AsyncStorage.
+
+---
+
+## Architecture
+```
+.
+├── README.md
+├── src/                 # Next.js backend
+│   ├── app/api/...      # Better Auth + Local Guide endpoints
+│   ├── lib/             # Auth config, Prisma client, email helpers
+│   ├── prisma/          # Schema & migrations
+│   └── next.config.ts
+└── frontend/            # React Native (Expo) client
+    ├── app/             # Screens (home, map, add, favorites, auth)
+    ├── components/
+    ├── context/         # PlacesProvider (discovery, favorites, caching)
+    ├── hooks/
+    ├── services/        # Google Places, categories, weather helpers
+    └── utils/
+```
+
+---
+
+## Prerequisites
+- Node.js 18+
+- npm / pnpm / yarn
+- PostgreSQL 16 (running locally or remote)
+- Expo CLI (`npx expo`)
+- Google Cloud project with **Places API** enabled
+- **OpenWeather** API key
+
+---
+
+## Environment Variables
+
+### `src/.env` (or `.env.local`)
+```env
+DATABASE_URL="postgresql://user:pass@localhost:5432/local_guide?schema=public"
+BETTER_AUTH_SECRET="replace_with_a_64_char_secret"
+EXPO_DEV_ORIGIN="exp://192.168.0.10:8081"          # must match Expo dev server origin
+GMAIL_USER="you@gmail.com"
+GMAIL_APP_PASSWORD="gmail_app_password"
+```
+
+### `frontend/.env`
+```env
+EXPO_PUBLIC_API_BASE_URL="http://192.168.0.10:3000"   # backend reachable from device
+EXPO_PUBLIC_GOOGLE_PLACES_API_KEY="AIzaSy..."
+EXPO_PUBLIC_OPENWEATHER_API_KEY="your_openweather_key"
+```
+
+> **Tip:** When testing on a physical device, replace `127.0.0.1` with your computer’s LAN IP and keep `EXPO_DEV_ORIGIN` in sync. Otherwise Better Auth will reject requests because of mismatched origins.
+
+---
+
+## Backend Setup (`/src`)
+```bash
+cd src
+npm install
+npx prisma migrate dev      # apply migrations
+npx prisma generate         # create Prisma client
+```
+
+Run the dev server:
+```bash
+npm run dev                 # http://127.0.0.1:3000
+```
+
+Useful scripts:
+```bash
+npm run build               # production build
+npm run start               # serve production build
+npm run lint                # lint backend code
+npx prisma studio           # inspect DB tables
+```
+
+---
+
+## Frontend Setup (`/frontend`)
 ```bash
 cd frontend
 npm install
+npx expo start              # choose iOS / Android / Web
 ```
+The Expo server prints a QR code or you can press `i`/`a` to launch an emulator. Ensure `EXPO_PUBLIC_API_BASE_URL` points to your backend (LAN IP for real devices).
 
-### Configure frontend → backend base URL
+---
 
-`authClient.ts` is configured to call the backend (e.g. `http://127.0.0.1:3000` or a LAN IP). To control this with an environment variable, add to `frontend/.env`:
+## Running the Full Stack
+1. **Start PostgreSQL** (if local)  
+   - Windows: `net start postgresql-x64-16`  
+   - macOS (Homebrew): `brew services start postgresql@16`
 
-```env
-EXPO_PUBLIC_API_BASE_URL="Use yours"
-```
+2. **Backend**  
+   ```bash
+   cd src
+   npm run dev
+   ```
 
-and in `authClient.ts`:
+3. **Frontend**  
+   ```bash
+   cd frontend
+   npx expo start
+   ```
 
-```ts
-const baseURL =
-    process.env.EXPO_PUBLIC_API_BASE_URL ?? "http://127.0.0.1:3000";
-```
+4. **Sign up → verify email → sign in**  
+   - `/signup` uses Better Auth to create the account and sends a Gmail-based verification link.  
+   - `/signin` logs in and routes back to `/`.
 
-Notes:
-- For a physical phone, set the value to your computer’s LAN IP, e.g. `http://192.168.0.10:3000`.
-- The IP must match the IP in the backend `.env` value `EXPO_DEV_ORIGIN`; otherwise Better Auth may reject requests with "Invalid origin".
+---
 
-### Start Expo dev server
+## Development Tips
+- **Favorites**: The favorites screen reads from the shared context (`usePlaces().getFavorites()`), so starring/unstarring instantly updates every UI.
+- **Map view**:  
+  - Tap anywhere to drop a pin.  
+  - The modal shows the resolved address (via Places) and offers **Add to My Places** and **Search Nearby** actions.  
+  - “Search Nearby” fetches curated Google Places recommendations around the pin.
+- **Weather widget**: Uses OpenWeather’s `/weather` endpoint. Provide your API key in `frontend/.env`.
+- **Places quotas**: We cache nearby (5 min) and search (2 min) responses and cap list lengths (6 & 10) to avoid quota exhaustion and UI flashing.
+- **Testing on device**: Keep `EXPO_PUBLIC_API_BASE_URL` and `EXPO_DEV_ORIGIN` aligned with your LAN IP; Better Auth validates origins.
 
-From `frontend/`:
+---
 
-```bash
-npx expo start
-```
+## Troubleshooting
+| Issue | Fix |
+| --- | --- |
+| `Invalid origin` from Better Auth | Ensure `EXPO_PUBLIC_API_BASE_URL`, `EXPO_DEV_ORIGIN`, and backend `trustedOrigins` all reference the same protocol/host/port. |
+| Favorites screen empty | Favorites now load from local context; ensure you star places in the app (or seed data) and that `usePlaces()` is available above the screen. |
+| Google Places quota exceeded | Wait for quota reset or request higher limits. We already cache responses and display fallbacks, but heavy testing can still hit limits. |
+| Weather shows “unavailable” | Confirm `EXPO_PUBLIC_OPENWEATHER_API_KEY` is set and the device has network access. |
 
+---
 
-
-
-
-
-### Account-related logic
-
-1. Visitor opens the app
-    - Sees the home page (`index.tsx`) with no Sign Out button at the bottom.
-    - Top-right avatar is an outline; tapping it navigates to `/signin`.
-
-2. Sign up
-    - On `/signup` fill in details → `authClient.signUp.email(...)`.
-    - Backend (Better Auth) creates the user and sends a verification email.
-    - User clicks the verification link → `emailVerified = true`.
-    - Return to the app and sign in from `/signin`.
-
-3. Sign in
-    - On `/signin` enter email and password → `authClient.signIn.email(...)`.
-    - On success → `router.replace("/")` to return to the home page.
-    - Home now shows the Sign Out button and the top-right avatar becomes filled.
-
-4. Sign out
-
-    - Top-right avatar → show an alert confirmation; on confirm call `authClient.signOut()` and show a "Signed out" message.
-
-5. Next time the app opens
-    - If the session is still valid, `useSession()` returns the user:
-      - Sign Out remains visible on the home page.
-      - Visiting `/signin` will `router.replace("/")` and redirect to home.
-    - If signed out, `useSession()` is empty:
-      - No Sign Out button is shown.
-      - Clicking the top-right avatar navigates to `/signin` to sign in again.
-
-
-
-
-
-
+## License
+MIT License © Local Guide team.  
+Feel free to fork, extend, or integrate into your own projects. Pull requests and bug reports are always welcome!
 

@@ -102,7 +102,6 @@ export default function AddPlaceScreen() {
         const { latitude, longitude } = geocodeResult[0];
         setValue('latitude', latitude);
         setValue('longitude', longitude);
-        // Show success message with coordinates
         Alert.alert(
           'Success',
           `Location found:\nLatitude: ${latitude.toFixed(6)}\nLongitude: ${longitude.toFixed(6)}`

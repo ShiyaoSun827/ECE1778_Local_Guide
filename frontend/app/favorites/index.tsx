@@ -1,5 +1,5 @@
 // frontend/app/favorites/index.tsx
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useMemo } from "react";
 import { StyleSheet, TouchableOpacity, Text, Alert } from "react-native";
 import { useRouter } from "expo-router";
 import {
@@ -10,66 +10,14 @@ import {
 } from "../../components";
 import { colors, spacing } from "../../theme";
 import { authClient } from "../../lib/authClient";
-import { API_BASE_URL } from "../../lib/config";
-
-const BACKEND_BASE_URL = API_BASE_URL;
-
-type FavoritePlace = {
-  id: string;
-  name: string;
-  description?: string | null;
-  latitude: number;
-  longitude: number;
-  imageUrl?: string | null;
-};
+import { usePlaces } from "../../hooks";
 
 export default function FavoritesScreen() {
   const router = useRouter();
   const { data: session, isPending } = authClient.useSession();
-  const [favorites, setFavorites] = useState<FavoritePlace[]>([]);
-  const [loading, setLoading] = useState(false);
+  const { getFavorites, toggleFavorite } = usePlaces();
 
-  const loadFavorites = useCallback(async () => {
-    try {
-      setLoading(true);
-
-      const cookies = authClient.getCookie();
-      const res = await fetch(`${BACKEND_BASE_URL}/api/favorites`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          ...(cookies ? { Cookie: cookies } : {}),
-        },
-      });
-
-      if (res.status === 401) {
-        setFavorites([]);
-        return;
-      }
-
-      if (!res.ok) {
-        const text = await res.text();
-        console.error("Backend /api/favorites error text:", text);
-        throw new Error(text || `HTTP ${res.status}`);
-      }
-
-      const data = (await res.json()) as FavoritePlace[];
-      setFavorites(data ?? []);
-    } catch (err: any) {
-      console.error("Load favorites error:", err);
-      Alert.alert("Error", err?.message ?? "Failed to load favorites");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (session?.user) {
-      loadFavorites();
-    } else if (!isPending) {
-      setFavorites([]);
-    }
-  }, [session?.user?.id, isPending, loadFavorites]);
+  const favorites = useMemo(() => getFavorites(), [getFavorites]);
 
   const handlePlacePress = (id: string) => {
     router.push(`/places/${id}`);
@@ -86,8 +34,7 @@ export default function FavoritesScreen() {
     router.push("/add");
   };
 
-  // Checking session or loading favorites
-  if (isPending || loading) {
+  if (isPending) {
     return (
       <ScreenContainer>
         <LoadingSpinner />
@@ -131,33 +78,14 @@ export default function FavoritesScreen() {
   // Logged in + has favorites
   return (
     <ScreenContainer>
-      {favorites.length === 0 ? (
-        <EmptyState
-          title="No favorites yet"
-          message="Star places to add them to your favorites!"
+      {favorites.map((item) => (
+        <PlaceCard
+          key={item.id}
+          place={item}
+          onPress={() => handlePlacePress(item.id)}
+          onToggleFavorite={() => toggleFavorite(item.id)}
         />
-      ) : (
-        <>
-          {favorites.map((item) => (
-            <PlaceCard
-              key={item.id}
-              place={{
-                id: item.id,
-                name: item.name,
-                description: item.description ?? "",
-                latitude: item.latitude,
-                longitude: item.longitude,
-                imageUri: item.imageUrl ?? undefined,
-                isFavorite: true,
-              }}
-              onPress={() => handlePlacePress(item.id)}
-              onToggleFavorite={() => {
-                
-              }}
-            />
-          ))}
-        </>
-      )}
+      ))}
 
       <TouchableOpacity style={styles.fab} onPress={handleAddPress}>
         <Text style={styles.fabText}>+</Text>

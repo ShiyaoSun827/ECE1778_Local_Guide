@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 // ✅ 注意这里的路径：从 app/api/auth/actions.ts 引
-import { signInWithEmail } from "@/app/api/auth/actions";
+import { signInWithEmail } from "@/app/api/auth/action";
 import NavBarClient from "@/components/NavBarClient";
 import Link from "next/link";
 

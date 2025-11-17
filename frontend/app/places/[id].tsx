@@ -1,18 +1,28 @@
 //frontend/app/places/[id].tsx
-import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Image, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { View, Text, StyleSheet, Image, ScrollView, TouchableOpacity, Alert, Linking } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import MapView, { Marker } from 'react-native-maps';
-import { ScreenContainer, WeatherWidget, Button } from '../../components';
+import { ScreenContainer, WeatherWidget, Button, LoadingSpinner } from '../../components';
 import { usePlaces, useWeather } from '../../hooks';
+import { Place } from '../../types';
 import { colors, spacing, typography } from '../../theme';
-import { formatDate } from '../../utils';
+import { formatDate, formatDistance } from '../../utils';
 
 export default function PlaceDetailsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const { getPlace, deletePlace, toggleFavorite, incrementVisitCount } = usePlaces();
-  const place = getPlace(id);
+  const {
+    getPlace,
+    fetchPlaceDetails,
+    deletePlace,
+    toggleFavorite,
+    incrementVisitCount,
+  } = usePlaces();
+  const cachedPlace = id ? getPlace(id) : undefined;
+  const [place, setPlace] = useState<Place | null>(cachedPlace ?? null);
+  const [loadingPlace, setLoadingPlace] = useState(!cachedPlace);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const lastIncrementedId = useRef<string | null>(null);
 
   const { weather, loading: weatherLoading } = useWeather(
@@ -21,19 +31,87 @@ export default function PlaceDetailsScreen() {
   );
 
   useEffect(() => {
-    // Only increment visit count once per place when the details page is opened
-    // Track which place ID we've already incremented to avoid duplicates
-    if (id && place && lastIncrementedId.current !== id) {
+    if (cachedPlace) {
+      setPlace(cachedPlace);
+      setLoadingPlace(false);
+      setLoadError(null);
+    }
+  }, [cachedPlace]);
+
+  useEffect(() => {
+    let isMounted = true;
+    if (!id || cachedPlace) return;
+
+    setLoadingPlace(true);
+    fetchPlaceDetails(id)
+      .then((result) => {
+        if (!isMounted) return;
+        setPlace(result ?? null);
+        if (!result) {
+          setLoadError("We couldn't find details for this place.");
+        }
+      })
+      .catch((err) => {
+        console.error("Failed to load place details:", err);
+        if (isMounted) {
+          setLoadError("Failed to load place details.");
+        }
+      })
+      .finally(() => {
+        if (isMounted) {
+          setLoadingPlace(false);
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [id, cachedPlace, fetchPlaceDetails]);
+
+  useEffect(() => {
+    if (
+      id &&
+      place &&
+      place.source === "custom" &&
+      lastIncrementedId.current !== id
+    ) {
       incrementVisitCount(place.id);
       lastIncrementedId.current = id;
     }
   }, [id, place, incrementVisitCount]);
 
+  const isCustomPlace = place?.source === "custom";
+
+  const openExternalLink = (url?: string) => {
+    if (!url) return;
+    Linking.openURL(url).catch((err) =>
+      console.warn("Unable to open link:", err)
+    );
+  };
+
+  const handleOpenMaps = () => openExternalLink(place?.googleMapsUri);
+  const handleOpenWebsite = () => openExternalLink(place?.websiteUri);
+  const handleDial = () => {
+    if (!place?.phoneNumber) return;
+    const sanitized = place.phoneNumber.replace(/\s+/g, "");
+    openExternalLink(`tel:${sanitized}`);
+  };
+
+  if (loadingPlace) {
+    return (
+      <ScreenContainer>
+        <LoadingSpinner />
+      </ScreenContainer>
+    );
+  }
+
   if (!place) {
     return (
       <ScreenContainer>
         <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>Place not found</Text>
+          <Text style={styles.errorText}>
+            {loadError ?? "Place not found"}
+          </Text>
           <Button title="Go Back" onPress={() => router.back()} />
         </View>
       </ScreenContainer>
@@ -41,6 +119,7 @@ export default function PlaceDetailsScreen() {
   }
 
   const handleDelete = () => {
+    if (!isCustomPlace) return;
     Alert.alert(
       'Delete Place',
       'Are you sure you want to delete this place?',
@@ -78,16 +157,65 @@ export default function PlaceDetailsScreen() {
               </Text>
             </TouchableOpacity>
           </View>
-          <Text style={styles.meta}>
-            Added {formatDate(place.createdAt)} • {place.visitCount}{' '}
-            {place.visitCount === 1 ? 'visit' : 'visits'}
-          </Text>
+          {place.address && (
+            <Text style={styles.address}>{place.address}</Text>
+          )}
+          <View style={styles.metaRow}>
+            <Text style={styles.meta}>
+              Added {formatDate(place.createdAt)} • {place.visitCount}{' '}
+              {place.visitCount === 1 ? 'visit' : 'visits'}
+            </Text>
+            {typeof place.distanceKm === 'number' && (
+              <Text style={styles.meta}>🛣️ {formatDistance(place.distanceKm)}</Text>
+            )}
+          </View>
+          <View style={styles.chipRow}>
+            {place.rating && (
+              <View style={styles.chip}>
+                <Text style={styles.chipText}>⭐ {place.rating.toFixed(1)}</Text>
+                {place.ratingCount ? (
+                  <Text style={styles.chipMeta}> ({place.ratingCount})</Text>
+                ) : null}
+              </View>
+            )}
+            {place.openNow !== null && place.openNow !== undefined && (
+              <View style={[styles.chip, place.openNow ? styles.openChip : styles.closedChip]}>
+                <Text style={styles.chipText}>
+                  {place.openNow ? 'Open now' : 'Closed'}
+                </Text>
+              </View>
+            )}
+            {place.category && (
+              <View style={styles.chip}>
+                <Text style={styles.chipText}>{place.category}</Text>
+              </View>
+            )}
+          </View>
         </View>
 
         {place.description && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Description</Text>
             <Text style={styles.description}>{place.description}</Text>
+          </View>
+        )}
+
+        {(place.address || place.phoneNumber || place.websiteUri) && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Contact</Text>
+            {place.address && (
+              <Text style={styles.sectionItem}>📍 {place.address}</Text>
+            )}
+            {place.phoneNumber && (
+              <TouchableOpacity onPress={handleDial}>
+                <Text style={styles.linkText}>📞 {place.phoneNumber}</Text>
+              </TouchableOpacity>
+            )}
+            {place.websiteUri && (
+              <TouchableOpacity onPress={handleOpenWebsite}>
+                <Text style={styles.linkText}>🔗 Visit website</Text>
+              </TouchableOpacity>
+            )}
           </View>
         )}
 
@@ -124,15 +252,45 @@ export default function PlaceDetailsScreen() {
           <WeatherWidget weather={weather} loading={weatherLoading} />
         </View>
 
-        <View style={styles.actions}>
-          <Button
-            title="Delete Place"
-            onPress={handleDelete}
-            variant="outline"
-            style={{ ...styles.actionButton, borderColor: colors.error }}
-            textStyle={{ color: colors.error }}
-          />
-        </View>
+        {(place.googleMapsUri ||
+          place.websiteUri ||
+          place.phoneNumber ||
+          isCustomPlace) && (
+          <View style={styles.actions}>
+            {place.googleMapsUri && (
+              <Button
+                title="Open in Google Maps"
+                onPress={handleOpenMaps}
+                style={styles.actionButton}
+              />
+            )}
+            {place.websiteUri && (
+              <Button
+                title="Visit Website"
+                onPress={handleOpenWebsite}
+                variant="outline"
+                style={styles.actionButton}
+              />
+            )}
+            {place.phoneNumber && (
+              <Button
+                title={`Call ${place.phoneNumber}`}
+                onPress={handleDial}
+                variant="outline"
+                style={styles.actionButton}
+              />
+            )}
+            {isCustomPlace && (
+              <Button
+                title="Delete Place"
+                onPress={handleDelete}
+                variant="outline"
+                style={{ ...styles.actionButton, borderColor: colors.error }}
+                textStyle={{ color: colors.error }}
+              />
+            )}
+          </View>
+        )}
       </ScrollView>
     </ScreenContainer>
   );
@@ -164,6 +322,16 @@ const styles = StyleSheet.create({
     color: colors.text,
     flex: 1,
   },
+  address: {
+    ...typography.body,
+    color: colors.textSecondary,
+    marginBottom: spacing.xs,
+  },
+  metaRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
   favoriteButton: {
     padding: spacing.xs,
   },
@@ -174,6 +342,35 @@ const styles = StyleSheet.create({
   meta: {
     ...typography.caption,
     color: colors.textSecondary,
+  },
+  chipRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.xs,
+    marginTop: spacing.sm,
+  },
+  chip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: 999,
+    backgroundColor: colors.background,
+  },
+  chipText: {
+    ...typography.caption,
+    color: colors.text,
+    fontWeight: '600',
+  },
+  chipMeta: {
+    ...typography.caption,
+    color: colors.textSecondary,
+  },
+  openChip: {
+    backgroundColor: 'rgba(52, 199, 89, 0.15)',
+  },
+  closedChip: {
+    backgroundColor: 'rgba(255, 59, 48, 0.15)',
   },
   section: {
     padding: spacing.md,
@@ -191,6 +388,16 @@ const styles = StyleSheet.create({
     ...typography.body,
     color: colors.text,
     lineHeight: 24,
+  },
+  sectionItem: {
+    ...typography.body,
+    color: colors.text,
+    marginBottom: spacing.xs,
+  },
+  linkText: {
+    ...typography.bodyBold,
+    color: colors.primary,
+    marginBottom: spacing.xs,
   },
   coordinates: {
     ...typography.body,
@@ -210,6 +417,7 @@ const styles = StyleSheet.create({
   actions: {
     padding: spacing.md,
     marginTop: spacing.md,
+    gap: spacing.sm,
   },
   actionButton: {
     marginBottom: spacing.sm,

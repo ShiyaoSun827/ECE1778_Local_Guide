@@ -20,9 +20,16 @@ function canEditPlace(
 }
 
 // GET /api/items/:id
+type RouteContext = { params: Promise<{ id: string }> | { id: string } };
+
+async function getParams(context: RouteContext) {
+  const params = await context.params;
+  return params;
+}
+
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  context: RouteContext
 ) {
   const session = await getSession(req);
   if (!session) {
@@ -30,22 +37,17 @@ export async function GET(
   }
 
   const userId = session.user.id;
+  const { id } = await getParams(context);
 
   const place = await prisma.place.findUnique({
-    where: { id: params.id },
-    include: {
-      favorites: {
-        where: { userId },
-      },
-    },
+    where: { id },
   });
 
   if (!place) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-
-  if (place.ownerId !== userId && session.user.role !== "ADMIN") {
+  if (place.userId !== userId && session.user.role !== "ADMIN") {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -58,7 +60,7 @@ export async function GET(
     longitude: place.longitude,
     imageUri: place.imageUri,
     createdAt: place.createdAt,
-    isFavorite: place.favorites.length > 0,
+    isFavorite: place.isFavorite,
   };
 
   return NextResponse.json(data);
@@ -67,22 +69,24 @@ export async function GET(
 // PATCH /api/items/:id
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  context: RouteContext
 ) {
   const session = await getSession(req);
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const { id } = await getParams(context);
+
   const place = await prisma.place.findUnique({
-    where: { id: params.id },
+    where: { id },
   });
 
   if (!place) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  if (!canEditPlace(session, place.ownerId)) {
+  if (!canEditPlace(session, place.userId)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -94,7 +98,7 @@ export async function PATCH(
   const { title, description, address, latitude, longitude, imageUri } = body;
 
   const updated = await prisma.place.update({
-    where: { id: params.id },
+    where: { id },
     data: {
       title: title ?? place.title,
       description: description ?? place.description,
@@ -111,27 +115,28 @@ export async function PATCH(
 // DELETE /api/items/:id
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  context: RouteContext
 ) {
   const session = await getSession(req);
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const { id } = await getParams(context);
+
   const place = await prisma.place.findUnique({
-    where: { id: params.id },
+    where: { id },
   });
 
   if (!place) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  if (!canEditPlace(session, place.ownerId)) {
+  if (!canEditPlace(session, place.userId)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  await prisma.favorite.deleteMany({ where: { placeId: params.id } });
-  await prisma.place.delete({ where: { id: params.id } });
+  await prisma.place.delete({ where: { id } });
 
   return NextResponse.json({ ok: true });
 }

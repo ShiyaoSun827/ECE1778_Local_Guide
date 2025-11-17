@@ -1,5 +1,5 @@
-import React, { useEffect, useState, useRef } from 'react';
-import { View, StyleSheet, TouchableOpacity, Text, Alert, Image, Modal, ScrollView, Platform } from 'react-native';
+import React, { useEffect, useState, useRef, useMemo } from 'react';
+import { View, StyleSheet, TouchableOpacity, Text, Alert, Image, Modal, ScrollView, Platform, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import MapView, { Marker, Region } from 'react-native-maps';
 import * as Location from 'expo-location';
@@ -8,11 +8,18 @@ import { ScreenContainer, LoadingSpinner, Button } from '../../components';
 import { usePlaces } from '../../hooks';
 import { Place } from '../../types';
 import { colors, spacing, typography, shadows } from '../../theme';
-import { formatDate } from '../../utils';
+import { formatDate, formatDistance } from '../../utils';
+import { searchNearbyPlaces } from '../../services/googlePlacesService';
 
 export default function MapScreen() {
   const router = useRouter();
-  const { places, loading } = usePlaces();
+  const {
+    places,
+    discoverPlaces,
+    searchResults,
+    discoverLoading,
+    loading,
+  } = usePlaces();
   const mapRef = useRef<MapView>(null);
   const [region, setRegion] = useState<Region>({
     latitude: 43.6532,
@@ -27,19 +34,37 @@ export default function MapScreen() {
     longitude: number;
     address?: string;
   } | null>(null);
-  const [reverseGeocodingLoading, setReverseGeocodingLoading] = useState(false);
+  const [addressLookupLoading, setAddressLookupLoading] = useState(false);
+  const [nearbyRecommendations, setNearbyRecommendations] = useState<Place[]>([]);
+  const [nearbyLoading, setNearbyLoading] = useState(false);
+  const [nearbyError, setNearbyError] = useState<string | null>(null);
+
+  const googlePlaces = searchResults.length > 0 ? searchResults : discoverPlaces;
+
+  const combinedPlaces = useMemo(() => {
+    const byId = new Map<string, Place>();
+    googlePlaces.forEach((place) => {
+      byId.set(place.id, place);
+    });
+    places.forEach((place) => {
+      if (!byId.has(place.id)) {
+        byId.set(place.id, place);
+      }
+    });
+    return Array.from(byId.values());
+  }, [googlePlaces, places]);
 
   useEffect(() => {
-    if (places.length > 0) {
-      // Calculate center of all places
+    if (combinedPlaces.length > 0) {
       const avgLat =
-        places.reduce((sum, p) => sum + p.latitude, 0) / places.length;
+        combinedPlaces.reduce((sum, p) => sum + p.latitude, 0) /
+        combinedPlaces.length;
       const avgLon =
-        places.reduce((sum, p) => sum + p.longitude, 0) / places.length;
+        combinedPlaces.reduce((sum, p) => sum + p.longitude, 0) /
+        combinedPlaces.length;
 
-      // Calculate bounds
-      const lats = places.map((p) => p.latitude);
-      const lons = places.map((p) => p.longitude);
+      const lats = combinedPlaces.map((p) => p.latitude);
+      const lons = combinedPlaces.map((p) => p.longitude);
       const minLat = Math.min(...lats);
       const maxLat = Math.max(...lats);
       const minLon = Math.min(...lons);
@@ -52,79 +77,71 @@ export default function MapScreen() {
         longitudeDelta: Math.max(maxLon - minLon, 0.01) * 1.5,
       });
     }
-  }, [places]);
+  }, [combinedPlaces]);
+
+  useEffect(() => {
+    if (!showPlaceModal) {
+      setNearbyRecommendations([]);
+      setNearbyError(null);
+    }
+  }, [showPlaceModal]);
 
   const handleMarkerPress = (place: Place) => {
     setSelectedPlace(place);
     setClickedLocation(null);
+    setNearbyRecommendations([]);
+    setNearbyError(null);
     setShowPlaceModal(true);
   };
 
   const handleMapPress = async (event: any) => {
-    // Don't trigger if clicking on a marker (markers handle their own press events)
-    // The onPress event fires for map taps, not marker taps
     const { latitude, longitude } = event.nativeEvent.coordinate;
-      
-      // Check if this is one of our saved places
-      const existingPlace = places.find(
-        (p) =>
-          Math.abs(p.latitude - latitude) < 0.0001 &&
-          Math.abs(p.longitude - longitude) < 0.0001
-      );
 
-      if (existingPlace) {
-        // If it's a saved place, show it normally
-        handleMarkerPress(existingPlace);
-        return;
+    const existingPlace = combinedPlaces.find(
+      (p) =>
+        Math.abs(p.latitude - latitude) < 0.0001 &&
+        Math.abs(p.longitude - longitude) < 0.0001
+    );
+
+    if (existingPlace) {
+      handleMarkerPress(existingPlace);
+      return;
+    }
+
+    setSelectedPlace(null);
+    setNearbyRecommendations([]);
+    setNearbyError(null);
+    setClickedLocation({ latitude, longitude });
+    setAddressLookupLoading(true);
+    setShowPlaceModal(true);
+
+    try {
+      const nearby = await searchNearbyPlaces({
+        latitude,
+        longitude,
+        radius: 120,
+        maxResultCount: 1,
+      });
+      if (nearby && nearby.length > 0) {
+        const candidate = nearby[0];
+        setClickedLocation((prev) =>
+          prev
+            ? {
+                ...prev,
+                address: candidate.address || candidate.name || "Pinned location",
+              }
+            : {
+                latitude,
+                longitude,
+                address: candidate.address || candidate.name || "Pinned location",
+              }
+        );
       }
-
-      // Otherwise, reverse geocode the clicked location
-      try {
-        setReverseGeocodingLoading(true);
-        setClickedLocation({ latitude, longitude });
-        
-        // Try to get address for this location
-        const reverseGeocodeResult = await Location.reverseGeocodeAsync({
-          latitude,
-          longitude,
-        });
-
-        if (reverseGeocodeResult && reverseGeocodeResult.length > 0) {
-          const address = reverseGeocodeResult[0];
-          // Format address
-          const addressParts = [
-            address.street,
-            address.city,
-            address.region,
-            address.country,
-          ].filter(Boolean);
-          const formattedAddress = addressParts.join(', ') || 'Unknown location';
-          
-          setClickedLocation({
-            latitude,
-            longitude,
-            address: formattedAddress,
-          });
-        } else {
-          setClickedLocation({
-            latitude,
-            longitude,
-            address: undefined,
-          });
-        }
-        
-        setShowPlaceModal(true);
-      } catch (error) {
-        console.error('Reverse geocoding error:', error);
-        setClickedLocation({
-          latitude,
-          longitude,
-          address: undefined,
-        });
-        setShowPlaceModal(true);
-      } finally {
-        setReverseGeocodingLoading(false);
-      }
+    } catch (error) {
+      console.error("Address lookup error:", error);
+    } finally {
+      setAddressLookupLoading(false);
+    }
   };
 
   const handleViewDetails = () => {
@@ -138,6 +155,8 @@ export default function MapScreen() {
     setShowPlaceModal(false);
     setSelectedPlace(null);
     setClickedLocation(null);
+    setNearbyRecommendations([]);
+    setNearbyError(null);
   };
 
   const handleAddToMyPlaces = () => {
@@ -152,6 +171,70 @@ export default function MapScreen() {
           address: clickedLocation.address || '',
         },
       });
+    }
+  };
+
+  const safeOpenUrl = (url?: string) => {
+    if (!url) return;
+    Linking.openURL(url).catch((err) =>
+      console.warn("Unable to open link:", err)
+    );
+  };
+
+  const handleOpenMaps = (url?: string) => safeOpenUrl(url);
+
+  const handleOpenWebsite = (url?: string) => safeOpenUrl(url);
+
+  const handleDial = (phone?: string) => {
+    if (!phone) return;
+    const sanitized = phone.replace(/\s+/g, "");
+    safeOpenUrl(`tel:${sanitized}`);
+  };
+
+  const resolveTargetLocation = () => {
+    if (selectedPlace) {
+      return {
+        latitude: selectedPlace.latitude,
+        longitude: selectedPlace.longitude,
+        address: selectedPlace.address ?? selectedPlace.name ?? "Pinned place",
+      };
+    }
+    if (clickedLocation) {
+      return clickedLocation;
+    }
+    return {
+      latitude: region.latitude,
+      longitude: region.longitude,
+      address: "Map center",
+    };
+  };
+
+  const handleSearchNearby = async () => {
+    const target = resolveTargetLocation();
+    setNearbyLoading(true);
+    setNearbyError(null);
+    try {
+      const results = await searchNearbyPlaces({
+        latitude: target.latitude,
+        longitude: target.longitude,
+        radius: 1500,
+        maxResultCount: 8,
+      });
+      const limited = results.slice(0, 6);
+      setNearbyRecommendations(limited);
+      setSelectedPlace(null);
+      setClickedLocation(target);
+      setShowPlaceModal(true);
+    } catch (err) {
+      console.error("Nearby search error:", err);
+      setNearbyError(
+        err instanceof Error
+          ? err.message
+          : "Unable to load nearby recommendations."
+      );
+      setShowPlaceModal(true);
+    } finally {
+      setNearbyLoading(false);
     }
   };
 
@@ -214,7 +297,10 @@ export default function MapScreen() {
     }
   };
 
-  if (loading) {
+  const showInitialLoader =
+    combinedPlaces.length === 0 && (discoverLoading || loading);
+
+  if (showInitialLoader) {
     return (
       <ScreenContainer>
         <LoadingSpinner />
@@ -233,7 +319,7 @@ export default function MapScreen() {
         showsUserLocation={true}
         showsMyLocationButton={false}
       >
-        {places.map((place) => (
+        {combinedPlaces.map((place) => (
           <Marker
             key={place.id}
             coordinate={{
@@ -243,8 +329,19 @@ export default function MapScreen() {
             title={place.name}
             description={place.description || 'Tap to view details'}
             onPress={() => handleMarkerPress(place)}
+            pinColor={place.source === 'custom' ? colors.secondary : colors.primary}
           />
         ))}
+        {clickedLocation && (
+          <Marker
+            coordinate={{
+              latitude: clickedLocation.latitude,
+              longitude: clickedLocation.longitude,
+            }}
+            title={clickedLocation.address || "Pinned location"}
+            pinColor={colors.secondary}
+          />
+        )}
       </MapView>
 
       {/* Locate Me Button */}
@@ -277,7 +374,6 @@ export default function MapScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Add Place Button */}
       <View style={styles.overlay}>
         <TouchableOpacity
           style={styles.button}
@@ -306,7 +402,7 @@ export default function MapScreen() {
               style={styles.modalContent}
               onStartShouldSetResponder={() => true}
             >
-            {(selectedPlace || clickedLocation) && (
+            {(selectedPlace || clickedLocation || nearbyRecommendations.length > 0) && (
               <>
                 {/* Close Button */}
                 <TouchableOpacity
@@ -318,7 +414,6 @@ export default function MapScreen() {
 
                 {selectedPlace ? (
                   <>
-                    {/* Place Image */}
                     {selectedPlace.imageUri && (
                       <Image
                         source={{ uri: selectedPlace.imageUri }}
@@ -326,15 +421,59 @@ export default function MapScreen() {
                       />
                     )}
 
-                    {/* Place Info */}
-                    <ScrollView 
+                    <ScrollView
                       style={styles.modalInfo}
                       showsVerticalScrollIndicator={false}
                     >
                       <View style={styles.modalHeader}>
-                        <Text style={styles.modalTitle}>{selectedPlace.name}</Text>
+                        <View style={{ flex: 1 }}>
+                          <Text style={styles.modalTitle}>
+                            {selectedPlace.name}
+                          </Text>
+                          {selectedPlace.address && (
+                            <Text style={styles.modalAddress}>
+                              {selectedPlace.address}
+                            </Text>
+                          )}
+                        </View>
                         <Text style={styles.favoriteIcon}>
-                          {selectedPlace.isFavorite ? '★' : '☆'}
+                          {selectedPlace.isFavorite ? "★" : "☆"}
+                        </Text>
+                      </View>
+
+                      <View style={styles.modalMeta}>
+                        {selectedPlace.rating && (
+                          <Text style={styles.modalMetaText}>
+                            ⭐ {selectedPlace.rating.toFixed(1)}
+                            {selectedPlace.ratingCount
+                              ? ` (${selectedPlace.ratingCount})`
+                              : ""}
+                          </Text>
+                        )}
+                        {selectedPlace.openNow !== null &&
+                          selectedPlace.openNow !== undefined && (
+                            <Text
+                              style={[
+                                styles.modalMetaText,
+                                selectedPlace.openNow
+                                  ? styles.openText
+                                  : styles.closedText,
+                              ]}
+                            >
+                              {selectedPlace.openNow ? "Open now" : "Closed"}
+                            </Text>
+                          )}
+                        {typeof selectedPlace.distanceKm === "number" && (
+                          <Text style={styles.modalMetaText}>
+                            🛣️ {formatDistance(selectedPlace.distanceKm)}
+                          </Text>
+                        )}
+                        <Text style={styles.modalMetaText}>
+                          📍 {selectedPlace.latitude.toFixed(4)},{" "}
+                          {selectedPlace.longitude.toFixed(4)}
+                        </Text>
+                        <Text style={styles.modalMetaText}>
+                          📅 {formatDate(selectedPlace.createdAt)}
                         </Text>
                       </View>
 
@@ -344,25 +483,42 @@ export default function MapScreen() {
                         </Text>
                       )}
 
-                      <View style={styles.modalMeta}>
-                        <Text style={styles.modalMetaText}>
-                          📍 {selectedPlace.latitude.toFixed(4)}, {selectedPlace.longitude.toFixed(4)}
-                        </Text>
-                        <Text style={styles.modalMetaText}>
-                          👁️ {selectedPlace.visitCount} {selectedPlace.visitCount === 1 ? 'visit' : 'visits'}
-                        </Text>
-                        <Text style={styles.modalMetaText}>
-                          📅 {formatDate(selectedPlace.createdAt)}
-                        </Text>
-                      </View>
-
-                      {/* Action Buttons */}
                       <View style={styles.modalActions}>
                         <Button
-                          title="View Details"
+                          title="View details"
                           onPress={handleViewDetails}
                           style={styles.detailsButton}
                         />
+                        {selectedPlace.googleMapsUri && (
+                          <Button
+                            title="Open in Google Maps"
+                            onPress={() =>
+                              handleOpenMaps(selectedPlace.googleMapsUri)
+                            }
+                            variant="outline"
+                            style={styles.detailsButton}
+                          />
+                        )}
+                        {selectedPlace.websiteUri && (
+                          <Button
+                            title="Visit website"
+                            onPress={() =>
+                              handleOpenWebsite(selectedPlace.websiteUri)
+                            }
+                            variant="outline"
+                            style={styles.detailsButton}
+                          />
+                        )}
+                        {selectedPlace.phoneNumber && (
+                          <Button
+                            title={`Call ${selectedPlace.phoneNumber}`}
+                            onPress={() =>
+                              handleDial(selectedPlace.phoneNumber)
+                            }
+                            variant="outline"
+                            style={styles.detailsButton}
+                          />
+                        )}
                       </View>
                     </ScrollView>
                   </>
@@ -373,7 +529,7 @@ export default function MapScreen() {
                       style={styles.modalInfo}
                       showsVerticalScrollIndicator={false}
                     >
-                      {reverseGeocodingLoading ? (
+                      {addressLookupLoading ? (
                         <View style={styles.loadingContainer}>
                           <LoadingSpinner />
                           <Text style={styles.loadingText}>Loading location info...</Text>
@@ -407,7 +563,56 @@ export default function MapScreen() {
                               onPress={handleAddToMyPlaces}
                               style={styles.detailsButton}
                             />
+                            <Button
+                              title={nearbyLoading ? "Searching..." : "Search Nearby"}
+                              onPress={handleSearchNearby}
+                              style={styles.detailsButton}
+                              disabled={nearbyLoading}
+                            />
                           </View>
+
+                          {nearbyLoading ? (
+                            <View style={styles.nearbyLoading}>
+                              <LoadingSpinner />
+                              <Text style={styles.nearbyLoadingText}>
+                                Finding recommendations...
+                              </Text>
+                            </View>
+                          ) : nearbyRecommendations.length > 0 ? (
+                            <View style={styles.nearbySection}>
+                              <Text style={styles.sectionSubtitle}>
+                                Nearby recommendations
+                              </Text>
+                              {nearbyRecommendations.map((place) => (
+                                <TouchableOpacity
+                                  key={place.id}
+                                  style={styles.nearbyItem}
+                                  onPress={() => {
+                                    setNearbyRecommendations([]);
+                                    handleMarkerPress(place);
+                                  }}
+                                >
+                                  <View style={{ flex: 1 }}>
+                                    <Text style={styles.nearbyItemTitle}>
+                                      {place.name}
+                                    </Text>
+                                    {place.address && (
+                                      <Text style={styles.nearbyItemSubtitle}>
+                                        {place.address}
+                                      </Text>
+                                    )}
+                                  </View>
+                                  {typeof place.distanceKm === 'number' && (
+                                    <Text style={styles.nearbyItemDistance}>
+                                      {formatDistance(place.distanceKm)}
+                                    </Text>
+                                  )}
+                                </TouchableOpacity>
+                              ))}
+                            </View>
+                          ) : nearbyError ? (
+                            <Text style={styles.nearbyError}>{nearbyError}</Text>
+                          ) : null}
                         </>
                       )}
                     </ScrollView>
@@ -559,6 +764,11 @@ const styles = StyleSheet.create({
     flex: 1,
     marginRight: spacing.sm,
   },
+  modalAddress: {
+    ...typography.body,
+    color: colors.textSecondary,
+    marginTop: spacing.xs,
+  },
   favoriteIcon: {
     fontSize: 24,
     color: colors.favorite,
@@ -577,8 +787,61 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     marginBottom: spacing.xs,
   },
+  openText: {
+    color: colors.success,
+    fontWeight: '600',
+  },
+  closedText: {
+    color: colors.error,
+    fontWeight: '600',
+  },
   modalActions: {
     marginTop: spacing.sm,
+  },
+  sectionSubtitle: {
+    ...typography.h3,
+    color: colors.text,
+    marginTop: spacing.lg,
+    marginBottom: spacing.sm,
+  },
+  nearbySection: {
+    marginTop: spacing.md,
+  },
+  nearbyItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  nearbyItemTitle: {
+    ...typography.bodyBold,
+    color: colors.text,
+  },
+  nearbyItemSubtitle: {
+    ...typography.caption,
+    color: colors.textSecondary,
+  },
+  nearbyItemDistance: {
+    ...typography.caption,
+    color: colors.textSecondary,
+    marginLeft: spacing.sm,
+  },
+  nearbyLoading: {
+    alignItems: 'center',
+    marginTop: spacing.lg,
+  },
+  nearbyLoadingText: {
+    ...typography.caption,
+    color: colors.textSecondary,
+    marginTop: spacing.sm,
+  },
+  nearbyError: {
+    ...typography.body,
+    color: colors.error,
+    marginTop: spacing.md,
+    textAlign: 'center',
   },
   detailsButton: {
     width: '100%',

@@ -3,7 +3,7 @@
 import { useTransition, useState } from "react";
 import { useRouter } from "next/navigation";
 // ✅ 注意这里的路径
-import { logout } from "@/app/api/auth/actions";
+import { logout } from "@/app/api/auth/action";
 
 export default function LogoutButton() {
   const [isPending, startTransition] = useTransition();

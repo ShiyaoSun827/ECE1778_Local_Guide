@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 // ✅ 注意这里的路径
-import { signUpWithEmail } from "@/app/api/auth/actions";
+import { signUpWithEmail } from "@/app/api/auth/action";
 import NavBarClient from "@/components/NavBarClient";
 import Link from "next/link";
 

@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, Image } from 'react-native';
 import { colors, spacing, typography } from '../theme';
 import { WeatherData } from '../types';
 import { LoadingSpinner } from './LoadingSpinner';
@@ -35,7 +35,12 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = ({
 
   return (
     <View style={styles.container}>
-      <Text style={styles.temperature}>{weather.temperature}°C</Text>
+      <View style={styles.row}>
+        <Text style={styles.temperature}>{weather.temperature}°C</Text>
+        {weather.icon && (
+          <Image source={{ uri: weather.icon }} style={styles.icon} />
+        )}
+      </View>
       <Text style={styles.condition}>{weather.condition}</Text>
       <Text style={styles.description}>{weather.description}</Text>
     </View>
@@ -54,6 +59,15 @@ const styles = StyleSheet.create({
     ...typography.h1,
     color: colors.primary,
     marginBottom: spacing.xs,
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  icon: {
+    width: 48,
+    height: 48,
   },
   condition: {
     ...typography.h3,

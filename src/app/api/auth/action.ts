@@ -5,6 +5,28 @@ import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 
+const DEFAULT_ERROR_MESSAGE = "Something went wrong. Please try again later.";
+
+function extractErrorMessage(error: unknown) {
+  if (error instanceof Error) {
+    return error.message;
+  }
+  if (typeof error === "object" && error !== null) {
+    const maybeError =
+      (error as { error?: string }).error ??
+      (error as { message?: string }).message;
+    if (typeof maybeError === "string" && maybeError.trim().length > 0) {
+      return maybeError;
+    }
+    if ("body" in error) {
+      const body = (error as { body?: any }).body;
+      if (body && typeof body.error === "string") {
+        return body.error;
+      }
+    }
+  }
+  return DEFAULT_ERROR_MESSAGE;
+}
 
 export async function signUpWithEmail(formData: FormData) {
   const email = (formData.get("email") ?? "").toString().trim();
@@ -18,24 +40,22 @@ export async function signUpWithEmail(formData: FormData) {
     };
   }
 
-  const res = await auth.api.signUpEmail({
-    body: {
-      email,
-      password,
-      name,
- 
-      callbackURL: `${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3000"}/verify-complete`,
-    },
-    headers: await headers(),
-  });
-  console.log("signUpEmail status =", res.status);
-  const data = await res.json().catch(() => ({}));
-  console.log("signUpEmail response =", data);
-
-  if (res.status >= 400) {
+  try {
+    await auth.api.signUpEmail({
+      body: {
+        email,
+        password,
+        name,
+        callbackURL: `${
+          process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3000"
+        }/verify-complete`,
+      },
+      headers: await headers(),
+    });
+  } catch (error) {
     return {
       success: false,
-      message: data.error || "Registration failed, please try again later.",
+      message: extractErrorMessage(error),
     };
   }
 
@@ -57,29 +77,25 @@ export async function signInWithEmail(formData: FormData) {
     };
   }
 
-  const res = await auth.api.signInEmail({
-    body: { email, password },
-    headers: await headers(), // Let Better Auth write cookies/session
-  });
-
-  const data = await res.json().catch(() => ({}));
-
-  if (res.status === 403) {
+  let userId: string | undefined;
+  try {
+    const result = await auth.api.signInEmail({
+      body: { email, password },
+      headers: await headers(),
+    });
+    userId = result.user?.id;
+  } catch (error) {
+    const message = extractErrorMessage(error);
+    const needsVerification =
+      typeof message === "string" &&
+      message.toLowerCase().includes("verify your email");
     return {
       success: false,
-      message: data.error || "Please verify your email before logging in.",
+      message: needsVerification
+        ? "Please verify your email before logging in."
+        : message || "Login failed, please check your email and password.",
     };
   }
-
-  if (res.status >= 400) {
-    return {
-      success: false,
-      message: data.error || "Login failed, please check your email and password.",
-    };
-  }
-
-  // data.user contains user information, we determine the redirect path based on the role
-  const userId = data.user?.id as string | undefined;
 
   let role = "user";
   if (userId) {
@@ -106,15 +122,14 @@ export async function signInWithEmail(formData: FormData) {
 
 // 3) Logout
 export async function logout() {
-  const res = await auth.api.signOut({
-    headers: await headers(),
-  });
-
-  if (res.status >= 400) {
-    const data = await res.json().catch(() => ({}));
+  try {
+    await auth.api.signOut({
+      headers: await headers(),
+    });
+  } catch (error) {
     return {
       success: false,
-      message: data.error || "Logout failed, please try again later.",
+      message: extractErrorMessage(error),
     };
   }
 

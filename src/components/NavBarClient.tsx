@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 // 注意：auth actions 在 /app/api/auth/actions.ts 下面
-import { logout } from "@/app/api/auth/actions";
+import { logout } from "@/app/api/auth/action";
 
 type SessionUser = {
   id: string;
@@ -19,10 +19,10 @@ type Session = {
   user?: SessionUser;
 } | null;
 
-export default function NavBarClient({ session }: { session: Session }) {
+export default function NavBarClient({ session }: { session?: Session }) {
   const router = useRouter();
   // 允许后面登出时把本地 session 清掉
-  const [currentSession, setCurrentSession] = useState<Session>(session);
+  const [currentSession, setCurrentSession] = useState<Session>(session ?? null);
 
   const user = currentSession?.user;
   const isVerified = user?.emailVerified ?? false;

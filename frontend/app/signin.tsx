@@ -58,8 +58,23 @@ export default function SignInScreen() {
         },
       ]);
     } catch (err: any) {
-      console.log("Sign-in error (network):", err);
-      Alert.alert("Login failed", err?.message ?? "Unknown error");
+      console.error("Sign-in error (network):", err);
+      console.error("Error details:", {
+        message: err?.message,
+        name: err?.name,
+        stack: err?.stack,
+        cause: err?.cause,
+      });
+      
+      // Provide more helpful error messages
+      let errorMessage = "Network request failed";
+      if (err?.message?.includes("Network request failed")) {
+        errorMessage = "Cannot connect to server. Please check:\n1. Your internet connection\n2. The backend is running\n3. Try restarting the app";
+      } else if (err?.message) {
+        errorMessage = err.message;
+      }
+      
+      Alert.alert("Login failed", errorMessage);
     } finally {
       setLoading(false);
     }

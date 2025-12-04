@@ -14,7 +14,20 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.localguide.app"
+      "bundleIdentifier": "com.localguide.app",
+      "infoPlist": {
+        "NSAppTransportSecurity": {
+          "NSAllowsArbitraryLoads": false,
+          "NSExceptionDomains": {
+            "fly.dev": {
+              "NSExceptionAllowsInsecureHTTPLoads": false,
+              "NSIncludesSubdomains": true,
+              "NSExceptionRequiresForwardSecrecy": true,
+              "NSExceptionMinimumTLSVersion": "TLSv1.2"
+            }
+          }
+        }
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -26,8 +39,10 @@
         "ACCESS_COARSE_LOCATION",
         "CAMERA",
         "READ_EXTERNAL_STORAGE",
-        "WRITE_EXTERNAL_STORAGE"
-      ]
+        "WRITE_EXTERNAL_STORAGE",
+        "INTERNET"
+      ],
+      "usesCleartextTraffic": false
     },
     "web": {},
     "plugins": [

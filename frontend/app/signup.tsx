@@ -47,8 +47,23 @@ export default function SignUpScreen() {
 
       router.replace("/signin");
     } catch (err: any) {
-      console.log("Sign-up error (network):", err);
-      Alert.alert("Sign up failed", err?.message ?? "Unknown error");
+      console.error("Sign-up error (network):", err);
+      console.error("Error details:", {
+        message: err?.message,
+        name: err?.name,
+        stack: err?.stack,
+        cause: err?.cause,
+      });
+      
+      // Provide more helpful error messages
+      let errorMessage = "Network request failed";
+      if (err?.message?.includes("Network request failed")) {
+        errorMessage = "Cannot connect to server. Please check:\n1. Your internet connection\n2. The backend is running\n3. Try restarting the app";
+      } else if (err?.message) {
+        errorMessage = err.message;
+      }
+      
+      Alert.alert("Sign up failed", errorMessage);
     } finally {
       setLoading(false);
     }

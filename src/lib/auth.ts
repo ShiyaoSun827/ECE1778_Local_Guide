@@ -10,6 +10,7 @@ import { sendEmail } from "@/lib/email";
 const prisma = new PrismaClient();
 
 export const auth = betterAuth({
+  secret: process.env.BETTER_AUTH_SECRET || "change-me-in-production",
   database: prismaAdapter(prisma, {
     provider: "postgresql",
   }),
@@ -43,11 +44,15 @@ export const auth = betterAuth({
     },
   },
 
+  baseURL: process.env.BETTER_AUTH_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:3000",
+  
   trustedOrigins: [
     "localguide://*",
     process.env.EXPO_DEV_ORIGIN || "exp://192.168.0.10:8081",
     process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:3000",
-  ],
+    process.env.BETTER_AUTH_URL,
+    process.env.FLY_APP_NAME ? `https://${process.env.FLY_APP_NAME}.fly.dev` : undefined,
+  ].filter((origin): origin is string => Boolean(origin)),
 
   advanced: {
     disableOriginCheck: true,

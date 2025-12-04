@@ -1,6 +1,8 @@
 // frontend/lib/config.ts
+// IMPORTANT: After changing .env, restart Expo with: npx expo start --clear
 export const API_BASE_URL =
-  process.env.EXPO_PUBLIC_API_BASE_URL ?? "http://127.0.0.1:3000";
+  process.env.EXPO_PUBLIC_API_BASE_URL || 
+  "https://local-guide-backend.fly.dev"; // Fallback to production URL
 
 export const GOOGLE_PLACES_API_KEY =
   process.env.EXPO_PUBLIC_GOOGLE_PLACES_API_KEY ??

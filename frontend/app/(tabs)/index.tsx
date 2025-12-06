@@ -216,7 +216,7 @@ export default function HomeScreen() {
         <View style={styles.sectionHeader}>
           <View>
             <Text style={styles.sectionEyebrow}>Your collection</Text>
-            <Text style={styles.sectionTitle}>Saved places</Text>
+            <Text style={styles.sectionTitle}>Custom Locations</Text>
           </View>
           <TouchableOpacity onPress={handleAddPress}>
             <Text style={styles.sectionAction}>Add</Text>
@@ -229,7 +229,7 @@ export default function HomeScreen() {
           </View>
         ) : myPlaces.length === 0 ? (
           <EmptyState
-            title="No saved places yet"
+            title="No custom locations yet"
             message="Capture your own spots to build a personal guide."
           />
         ) : (
@@ -250,7 +250,7 @@ export default function HomeScreen() {
               {hasActiveSearch ? "Search results" : "Discover nearby"}
             </Text>
             <Text style={styles.sectionTitle}>
-              {hasActiveSearch ? "Inspired by your search" : "Handpicked gems"}
+              {hasActiveSearch ? "Inspired by your search" : "Featured Locations"}
             </Text>
           </View>
           <TouchableOpacity onPress={() => refreshDiscover({ force: true })}>

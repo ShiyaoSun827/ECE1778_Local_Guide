@@ -1,5 +1,5 @@
 // frontend/app/(tabs)/profile.tsx
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -9,24 +9,51 @@ import {
   ScrollView,
   Alert,
   ActivityIndicator,
+  RefreshControl,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { authClient } from "../../lib/authClient";
+import { apiFetch } from "../../lib/apiClient"; // [新增] 引入 apiFetch
 import { Ionicons } from "@expo/vector-icons";
-import { colors } from "../../theme"; // 确保路径正确
+import { colors } from "../../theme"; 
 
 export default function ProfileScreen() {
   const router = useRouter();
-  const { data: session, isLoading, error } = authClient.useSession();
+  const { data: session, isLoading: sessionLoading } = authClient.useSession();
   const user = session?.user;
 
-  // 简单的登录检查：如果没有 Session 且不在加载中，跳转登录
-  useEffect(() => {
-    if (!isLoading && !session) {
-      // 可以在这里跳转，或者显示一个“请登录”的 UI
-      // router.replace("/signin");
+  // [新增] 用于存储从后端获取的完整用户信息（包含 stats）
+  const [profileData, setProfileData] = useState<any>(null);
+  const [loadingStats, setLoadingStats] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+
+  // 获取最新的 Profile 数据 (包含 stats)
+  const fetchProfileData = async () => {
+    try {
+      const res = await apiFetch("/api/users/me");
+      if (res.ok) {
+        const data = await res.json();
+        setProfileData(data.user);
+      }
+    } catch (error) {
+      console.error("Failed to fetch profile stats:", error);
     }
-  }, [isLoading, session, router]);
+  };
+
+  // 初始加载
+  useEffect(() => {
+    if (user) {
+      setLoadingStats(true);
+      fetchProfileData().finally(() => setLoadingStats(false));
+    }
+  }, [user]);
+
+  // 下拉刷新
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await fetchProfileData();
+    setRefreshing(false);
+  };
 
   const handleLogout = async () => {
     Alert.alert("Sign Out", "Are you sure you want to sign out?", [
@@ -50,7 +77,7 @@ export default function ProfileScreen() {
     Alert.alert("Coming Soon", "Edit profile functionality will be implemented later.");
   };
 
-  if (isLoading) {
+  if (sessionLoading) {
     return (
       <View style={styles.centerContainer}>
         <ActivityIndicator size="large" color="#007AFF" />
@@ -75,8 +102,18 @@ export default function ProfileScreen() {
     );
   }
 
+  // 优先显示 api 拿到的数据，兜底显示 session 中的数据
+  const displayUser = profileData || user;
+  const stats = displayUser.stats || { places: 0, cities: 0, likes: 0 };
+
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+    <ScrollView 
+      style={styles.container} 
+      showsVerticalScrollIndicator={false}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+      }
+    >
       {/* 头部背景 */}
       <View style={styles.headerBackground} />
 
@@ -86,7 +123,7 @@ export default function ProfileScreen() {
           <Image
             style={styles.avatar}
             source={{
-              uri: user.image || "https://ui-avatars.com/api/?name=" + (user.name || "User") + "&background=0D8ABC&color=fff",
+              uri: displayUser.image || "https://ui-avatars.com/api/?name=" + (displayUser.name || "User") + "&background=0D8ABC&color=fff",
             }}
           />
           <TouchableOpacity style={styles.editIconBadge} onPress={handleEditProfile}>
@@ -94,32 +131,23 @@ export default function ProfileScreen() {
           </TouchableOpacity>
         </View>
 
-        <Text style={styles.name}>{user.name || "Local Explorer"}</Text>
-        <Text style={styles.email}>{user.email}</Text>
+        <Text style={styles.name}>{displayUser.name || "Local Explorer"}</Text>
+        <Text style={styles.email}>{displayUser.email}</Text>
         
-        {/* 新增的字段展示 */}
         <View style={styles.infoRow}>
           <Ionicons name="location-outline" size={16} color="#666" />
-          <Text style={styles.infoText}>{(user as any).location || "Toronto, Canada"}</Text>
+          <Text style={styles.infoText}>{(displayUser as any).location || "Toronto, Canada"}</Text>
         </View>
         
         <Text style={styles.bio}>
-          {(user as any).bio || "This user hasn't written a bio yet. They are busy exploring the world!"}
+          {(displayUser as any).bio || "This user hasn't written a bio yet. They are busy exploring the world!"}
         </Text>
 
         <View style={styles.statsContainer}>
-          <View style={styles.statItem}>
-            <Text style={styles.statNumber}>12</Text>
-            <Text style={styles.statLabel}>Places</Text>
-          </View>
+          
           <View style={styles.statDivider} />
           <View style={styles.statItem}>
-            <Text style={styles.statNumber}>5</Text>
-            <Text style={styles.statLabel}>Cities</Text>
-          </View>
-          <View style={styles.statDivider} />
-          <View style={styles.statItem}>
-            <Text style={styles.statNumber}>8</Text>
+            <Text style={styles.statNumber}>{stats.likes}</Text>
             <Text style={styles.statLabel}>Likes</Text>
           </View>
         </View>
@@ -166,7 +194,7 @@ export default function ProfileScreen() {
   );
 }
 
-// 辅助组件：菜单项
+// 辅助组件：菜单项 (保持不变)
 const MenuItem = ({ icon, label, onPress, isDestructive = false }: any) => (
   <TouchableOpacity style={styles.menuItem} onPress={onPress} activeOpacity={0.7}>
     <View style={[styles.menuIconBox, isDestructive && styles.destructiveIconBox]}>

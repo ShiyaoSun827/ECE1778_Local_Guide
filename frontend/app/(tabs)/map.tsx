@@ -768,6 +768,7 @@ const styles = StyleSheet.create({
   },
   modalActions: {
     marginTop: spacing.sm,
+    gap: spacing.sm,
   },
   sectionSubtitle: {
     ...typography.h3,

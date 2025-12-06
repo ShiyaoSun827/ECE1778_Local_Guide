@@ -13,7 +13,7 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { authClient } from "../../lib/authClient";
-import { apiFetch } from "../../lib/apiClient"; // [新增] 引入 apiFetch
+import { apiFetch } from "../../lib/apiClient"; 
 import { Ionicons } from "@expo/vector-icons";
 import { colors } from "../../theme"; 
 
@@ -22,12 +22,12 @@ export default function ProfileScreen() {
   const { data: session, isLoading: sessionLoading } = authClient.useSession();
   const user = session?.user;
 
-  // [新增] 用于存储从后端获取的完整用户信息（包含 stats）
+
   const [profileData, setProfileData] = useState<any>(null);
   const [loadingStats, setLoadingStats] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
-  // 获取最新的 Profile 数据 (包含 stats)
+
   const fetchProfileData = async () => {
     try {
       const res = await apiFetch("/api/users/me");
@@ -40,7 +40,7 @@ export default function ProfileScreen() {
     }
   };
 
-  // 初始加载
+
   useEffect(() => {
     if (user) {
       setLoadingStats(true);
@@ -48,7 +48,7 @@ export default function ProfileScreen() {
     }
   }, [user]);
 
-  // 下拉刷新
+
   const onRefresh = async () => {
     setRefreshing(true);
     await fetchProfileData();
@@ -85,7 +85,7 @@ export default function ProfileScreen() {
     );
   }
 
-  // 未登录状态 UI
+  
   if (!user) {
     return (
       <View style={styles.centerContainer}>
@@ -102,7 +102,7 @@ export default function ProfileScreen() {
     );
   }
 
-  // 优先显示 api 拿到的数据，兜底显示 session 中的数据
+  
   const displayUser = profileData || user;
   const stats = displayUser.stats || { places: 0, cities: 0, likes: 0 };
 
@@ -114,10 +114,10 @@ export default function ProfileScreen() {
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
       }
     >
-      {/* 头部背景 */}
+ 
       <View style={styles.headerBackground} />
 
-      {/* 个人信息卡片 */}
+     
       <View style={styles.profileCard}>
         <View style={styles.avatarContainer}>
           <Image
@@ -153,7 +153,7 @@ export default function ProfileScreen() {
         </View>
       </View>
 
-      {/* 菜单选项 */}
+    
       <View style={styles.menuContainer}>
         <Text style={styles.menuTitle}>Account Settings</Text>
         
@@ -194,7 +194,6 @@ export default function ProfileScreen() {
   );
 }
 
-// 辅助组件：菜单项 (保持不变)
 const MenuItem = ({ icon, label, onPress, isDestructive = false }: any) => (
   <TouchableOpacity style={styles.menuItem} onPress={onPress} activeOpacity={0.7}>
     <View style={[styles.menuIconBox, isDestructive && styles.destructiveIconBox]}>

@@ -28,6 +28,7 @@ function AppContent() {
           name="(tabs)"
           options={{
             headerShown: false,
+            title: "Back",
           }}
         />
 

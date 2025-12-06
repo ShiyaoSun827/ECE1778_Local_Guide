@@ -23,7 +23,7 @@ export default function FavoritesScreen() {
   const { data: session, isPending } = authClient.useSession();
   const { getFavorites, toggleFavorite } = usePlaces();
 
-  // 从 Context 获取数据，数据现在来自于后端数据库 + 本地缓存的合并
+
   const favorites = useMemo(() => getFavorites(), [getFavorites]);
 
   const handlePlacePress = (id: string) => {
@@ -94,7 +94,7 @@ export default function FavoritesScreen() {
             key={item.id}
             place={item}
             onPress={() => handlePlacePress(item.id)}
-            // 直接调用 Context 的 toggleFavorite，它内部现在处理了 API 请求
+       
             onToggleFavorite={() => toggleFavorite(item.id)}
           />
         ))}

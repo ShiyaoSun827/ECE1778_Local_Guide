@@ -23,7 +23,7 @@ import {
 } from "../services/categoriesService";
 import { useLocationPermission } from "../hooks/useLocationPermission";
 import { calculateDistance } from "../utils";
-import { apiFetch } from "../lib/apiClient"; // [新增] 引入带 Cookie 的 apiFetch
+import { apiFetch } from "../lib/apiClient"; 
 
 const CUSTOM_STORAGE_KEY = "@localguide:customPlaces";
 
@@ -181,17 +181,16 @@ export function PlacesProvider({ children }: PlacesProviderProps) {
     }
   }, []);
 
-  // [修改] 使用 apiFetch 加载收藏，这样会自动携带 Cookie
   const loadFavoritePlaces = useCallback(async () => {
     try {
-      // 这里的路径需要和 apiClient 的 BASE_URL 拼接正确，通常是 /api/favorites
+   
       const response = await apiFetch("/api/favorites");
       
       if (response.ok) {
         const data = await response.json();
         setFavorites(data);
       } else if (response.status === 401) {
-        setFavorites([]); // 未登录状态
+        setFavorites([]); 
       } else {
         console.warn("Failed to load favorites, status:", response.status);
       }
@@ -264,17 +263,17 @@ export function PlacesProvider({ children }: PlacesProviderProps) {
     [places, saveCustomPlaces]
   );
 
-  // [修改] 核心：切换收藏状态并同步到后端
+
   const toggleFavorite = useCallback(
     async (id: string): Promise<void> => {
-      // 1. 处理本地 Custom Places (暂时保持本地逻辑，或者你也想同步到后端)
+     
       const customPlace = places.find((p) => p.id === id);
       if (customPlace) {
         await updatePlace(id, { isFavorite: !customPlace.isFavorite });
         return;
       }
 
-      // 2. Google / Backend Places -> 调用 API 同步数据库
+    
       const isAlreadyFavorite = favorites.some((fav) => fav.id === id);
       const prevFavorites = [...favorites];
 
@@ -289,7 +288,7 @@ export function PlacesProvider({ children }: PlacesProviderProps) {
 
       if (!sourcePlace && !isAlreadyFavorite) return;
 
-      // --- 乐观更新 (UI 立即响应) ---
+ 
       if (isAlreadyFavorite) {
         setFavorites((prev) => prev.filter((p) => p.id !== id));
       } else if (sourcePlace) {
@@ -302,7 +301,7 @@ export function PlacesProvider({ children }: PlacesProviderProps) {
         setFavorites((prev) => [enriched, ...prev]);
       }
 
-      // --- 后端同步 (使用 apiFetch 携带 Cookie) ---
+   
       try {
         if (isAlreadyFavorite) {
           // DELETE
@@ -330,7 +329,7 @@ export function PlacesProvider({ children }: PlacesProviderProps) {
         }
       } catch (err) {
         console.error("Error syncing favorite:", err);
-        // 失败回滚
+     
         setFavorites(prevFavorites);
         alert("Failed to sync favorite. Please check your connection.");
       }
@@ -547,7 +546,6 @@ export function PlacesProvider({ children }: PlacesProviderProps) {
     setSearchResults((prev) => enrichList(prev));
   }, [favoriteIds, enrichList]);
 
-  // [修改] refresh 包含 API 拉取
   const refresh = useCallback(async () => {
     await Promise.all([loadCustomPlaces(), loadFavoritePlaces()]);
     await refreshDiscover({ force: true });

@@ -21,8 +21,8 @@ export async function GET(req: NextRequest) {
     where: { userId: user.id },
   });
 
-  const favoritesCount = await prisma.place.count({
-    where: { userId: user.id, isFavorite: true },
+  const favoritesCount = await prisma.favoritePlace.count({
+    where: { userId: user.id },
   });
 
   // 简单的城市计数 (根据地址去重，简化逻辑)

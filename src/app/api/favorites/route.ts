@@ -45,7 +45,9 @@ export async function GET(req: NextRequest) {
 
 // POST: 添加收藏
 export async function POST(req: NextRequest) {
+  console.log("[/api/favorites] cookies:", req.headers.get("cookie"));
   const session = await auth.api.getSession({ headers: req.headers });
+  console.log("[/api/favorites] session:", session);
   if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }

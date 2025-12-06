@@ -37,7 +37,6 @@ model User {
   accounts      Account[]
   sessions      Session[]
   verifications Verification[]
-  favorites     FavoritePlace[]
   places        Place[]
   comments      Comment[]
 }
@@ -151,17 +150,4 @@ model Comment {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-}
-model FavoritePlace {
-  id       String @id @default(cuid())
-  userId   String
-  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  placeId   String
-  placeData Json
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@unique([userId, placeId])
 }

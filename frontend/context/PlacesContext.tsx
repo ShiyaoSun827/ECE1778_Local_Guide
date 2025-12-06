@@ -26,14 +26,6 @@ import {
   getDefaultCategories,
   PlaceCategory,
 } from "../services/categoriesService";
-import {
-  deleteFavoritePlace,
-  fetchFavoritePlaces,
-  saveFavoritePlace,
-} from "../services/favoritesService";
-
-import { authClient } from "../lib/authClient";
-
 import { useLocationPermission } from "../hooks/useLocationPermission";
 import { calculateDistance } from "../utils";
 
@@ -124,9 +116,7 @@ export function PlacesProvider({ children }: PlacesProviderProps) {
     loading: locationLoading,
     requestPermission,
   } = useLocationPermission();
-  const { data: session } = authClient.useSession();
-  const sessionToken =
-    (session as any)?.sessionToken || (session as any)?.token || session?.sessionToken;
+
   const currentCoordinates = useMemo(() => {
     if (!location?.coords) return null;
     return {
@@ -183,15 +173,12 @@ export function PlacesProvider({ children }: PlacesProviderProps) {
       };
     });
 
-  const hydrateFavoritePlaces = useCallback(
-    (items: Place[]) =>
-      (items ?? []).map((place) => ({
-        ...place,
-        isFavorite: true,
-        source: place.source ?? ("favorite" as const),
-      })),
-    []
-  );
+  const hydrateFavoritePlaces = (items: Place[]) =>
+    (items ?? []).map((place) => ({
+      ...place,
+      isFavorite: true,
+      source: place.source ?? ("favorite" as const),
+    }));
 
   const loadCustomPlaces = useCallback(async () => {
     try {
@@ -208,16 +195,6 @@ export function PlacesProvider({ children }: PlacesProviderProps) {
 
   const loadFavoritePlaces = useCallback(async () => {
     try {
-      if (session?.user) {
-        const remoteFavorites = await fetchFavoritePlaces(sessionToken);
-        setFavorites(hydrateFavoritePlaces(remoteFavorites));
-        await AsyncStorage.setItem(
-          FAVORITES_STORAGE_KEY,
-          JSON.stringify(remoteFavorites)
-        );
-        return;
-      }
-
       const data = await AsyncStorage.getItem(FAVORITES_STORAGE_KEY);
       if (data) {
         setFavorites(hydrateFavoritePlaces(JSON.parse(data)));
@@ -225,7 +202,7 @@ export function PlacesProvider({ children }: PlacesProviderProps) {
     } catch (err) {
       console.error("Error loading favorite places:", err);
     }
-  }, [session?.user, sessionToken, hydrateFavoritePlaces]);
+  }, []);
 
   useEffect(() => {
     loadCustomPlaces();
@@ -304,25 +281,7 @@ export function PlacesProvider({ children }: PlacesProviderProps) {
     async (id: string): Promise<void> => {
       const customPlace = places.find((p) => p.id === id);
       if (customPlace) {
-        const nextFavoriteState = !customPlace.isFavorite;
-        await updatePlace(id, { isFavorite: nextFavoriteState });
-        if (session?.user) {
-          try {
-            if (nextFavoriteState) {
-              await saveFavoritePlace(
-                {
-                  ...customPlace,
-                  isFavorite: true,
-                },
-                sessionToken
-              );
-            } else {
-              await deleteFavoritePlace(id, sessionToken);
-            }
-          } catch (err) {
-            console.error("Error syncing custom favorite:", err);
-          }
-        }
+        await updatePlace(id, { isFavorite: !customPlace.isFavorite });
         return;
       }
 
@@ -332,13 +291,6 @@ export function PlacesProvider({ children }: PlacesProviderProps) {
       if (existingIndex !== -1) {
         currentFavorites.splice(existingIndex, 1);
         await saveFavoritePlaces(currentFavorites);
-        if (session?.user) {
-          try {
-            await deleteFavoritePlace(id, sessionToken);
-          } catch (err) {
-            console.error("Error removing favorite remotely:", err);
-          }
-        }
         return;
       }
 
@@ -361,13 +313,6 @@ export function PlacesProvider({ children }: PlacesProviderProps) {
       };
 
       await saveFavoritePlaces([enriched, ...currentFavorites]);
-      if (session?.user) {
-        try {
-          await saveFavoritePlace(enriched, sessionToken);
-        } catch (err) {
-          console.error("Error saving favorite remotely:", err);
-        }
-      }
     },
     [
       places,
@@ -376,8 +321,6 @@ export function PlacesProvider({ children }: PlacesProviderProps) {
       searchResults,
       updatePlace,
       saveFavoritePlaces,
-      session?.user,
-      sessionToken,
     ]
   );
 
@@ -635,5 +578,4 @@ export function usePlacesContext() {
   }
   return context;
 }
-
 

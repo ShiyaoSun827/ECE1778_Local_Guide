@@ -23,8 +23,12 @@ export async function GET(req: NextRequest) {
         id: user.id,
         email: user.email,
         name: user.name,
+        image: user.image, 
         role: (user as any).role ?? "USER",
         emailVerified: user.emailVerified,
+        
+        bio: (user as any).bio, 
+        location: (user as any).location,
       },
     },
     { status: 200 }

@@ -26,7 +26,8 @@ model User {
   emailVerified Boolean @default(false)
   image         String?
   role          String  @default("user")
-
+  bio           String?  // 个人简介
+  location      String?  // 用户所在地
   //  Better Auth / admin 插件用
   banned Boolean @default(false)
 

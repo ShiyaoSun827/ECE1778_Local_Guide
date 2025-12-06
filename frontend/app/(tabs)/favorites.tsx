@@ -1,4 +1,4 @@
-// frontend/app/favorites/index.tsx
+// frontend/app/(tabs)/favorites.tsx
 import React, { useMemo } from "react";
 import { StyleSheet, TouchableOpacity, Text, Alert, ScrollView } from "react-native";
 import { useRouter } from "expo-router";

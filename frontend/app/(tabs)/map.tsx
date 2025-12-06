@@ -1,3 +1,4 @@
+//frontend/app/(tabs)/map.tsx
 import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { View, StyleSheet, TouchableOpacity, Text, Alert, Image, Modal, ScrollView, Platform, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';

@@ -1,3 +1,4 @@
+//frontend/app/(tabs)/index.tsx
 import React, { useState, useEffect, useMemo } from "react";
 import {
   View,
@@ -14,9 +15,9 @@ import {
   PlaceCard,
   EmptyState,
   LoadingSpinner,
-} from "../components";
-import { usePlaces } from "../hooks";
-import { colors, spacing, typography } from "../theme";
+} from "../../components";
+import { usePlaces } from "../../hooks";
+import { colors, spacing, typography } from "../../theme";
 
 export default function HomeScreen() {
   const router = useRouter();

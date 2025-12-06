@@ -114,20 +114,19 @@ model Category {
 model Place {
   id String @id @default(cuid())
 
-  // 属于哪个用户，因为每个人自己的个人低头
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  title       String // 地点名
-  description String? // 备注 / 心情
-  address     String? // 文本地址（Google Places 填）
-  latitude    Float // 坐标：用来算附近和调天气
+  title       String   // [修改意图] 用户的自定义标题 (例如: "我的秘密约会圣地")
+  placeName   String?  // [新增字段] Google Maps 上的实际地点名 (例如: "CN Tower")
+  description String?  // 帖子内容/备注
+  address     String?  // 实际地址
+  latitude    Float
   longitude   Float
 
-  imageUri   String? // Expo image-picker 拍的图的 URI 或上传后的 URL
-  isFavorite Boolean @default(false) // Favorites Screen 用
+  imageUri   String?
+  isFavorite Boolean @default(false) // [注意] 这目前是“私有”的收藏状态
 
-  // 分类
   categoryId String?
   category   Category? @relation(fields: [categoryId], references: [id])
 

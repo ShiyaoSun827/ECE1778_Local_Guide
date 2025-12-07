@@ -489,7 +489,7 @@ npm install
 EXPO_PUBLIC_API_BASE_URL="http://192.168.2.11:3000"
 
 # Google Places API Key
-EXPO_PUBLIC_GOOGLE_PLACES_API_KEY="AIzaSyAU6vsj5SAkxy1or3rjq66VoMSnshNTl5s"
+EXPO_PUBLIC_GOOGLE_PLACES_API_KEY="AIzaSyAygeIYYtdDUOEHRM0R2bO67qsnfugUAvQ"
 
 # OpenWeather API Key (optional, Open-Meteo is used by default)
 EXPO_PUBLIC_OPENWEATHER_API_KEY="your_openweather_key"
@@ -674,7 +674,7 @@ npx expo run:ios     # Run on iOS
         "EAS_BUILD_NPM_INSTALL_ARGS": "--legacy-peer-deps",
         "EXPO_PUBLIC_API_BASE_URL": "http://your-ip:3000",
         "EXPO_PUBLIC_API_URL": "http://your-ip:3000",
-        "EXPO_PUBLIC_GOOGLE_PLACES_API_KEY": "AIzaSyAU6vsj5SAkxy1or3rjq66VoMSnshNTl5s"
+        "EXPO_PUBLIC_GOOGLE_PLACES_API_KEY": "AIzaSyAygeIYYtdDUOEHRM0R2bO67qsnfugUAvQ"
       }
     },
     "production": {

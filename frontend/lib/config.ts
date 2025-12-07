@@ -6,7 +6,7 @@ export const API_BASE_URL =
 
 export const GOOGLE_PLACES_API_KEY =
   process.env.EXPO_PUBLIC_GOOGLE_PLACES_API_KEY ??
-  "AIzaSyAU6vsj5SAkxy1or3rjq66VoMSnshNTl5s";
+  "AIzaSyAygeIYYtdDUOEHRM0R2bO67qsnfugUAvQ";
 
 export const GOOGLE_PLACES_BASE_URL = "https://places.googleapis.com/v1";
 

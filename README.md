@@ -87,7 +87,7 @@ GMAIL_APP_PASSWORD="qomdywkvbpacxjzh"
 EXPO_PUBLIC_API_BASE_URL="http://192.168.2.11:3000"   # use backend address as shown in the actual command line
 
 # Google Places API Key
-EXPO_PUBLIC_GOOGLE_PLACES_API_KEY=AIzaSyAU6vsj5SAkxy1or3rjq66VoMSnshNTl5s
+EXPO_PUBLIC_GOOGLE_PLACES_API_KEY=AIzaSyAygeIYYtdDUOEHRM0R2bO67qsnfugUAvQ
 EXPO_PUBLIC_OPENWEATHER_API_KEY="your_openweather_key"
 ```
 
@@ -217,7 +217,7 @@ CDN_URL=https://movies-images.tor1.cdn.digitaloceanspaces.com
         "EAS_BUILD_NPM_INSTALL_ARGS": "--legacy-peer-deps",
         "EXPO_PUBLIC_API_BASE_URL": "换成你自己的IP或者fly io",
         "EXPO_PUBLIC_API_URL": "换成你自己的IP或者fly io",,
-        "EXPO_PUBLIC_GOOGLE_PLACES_API_KEY": "AIzaSyAU6vsj5SAkxy1or3rjq66VoMSnshNTl5s"
+        "EXPO_PUBLIC_GOOGLE_PLACES_API_KEY": "AIzaSyAygeIYYtdDUOEHRM0R2bO67qsnfugUAvQ"
       }
     },
     "production": {

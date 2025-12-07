@@ -173,14 +173,14 @@ The Expo server prints a QR code or you can press `i`/`a` to launch an emulator.
 6. **src/.env**
 ```bash
 # Database
-DATABASE_URL="postgresql://shiyaosun:12345@localhost:5432/local_guide?schema=public"
+DATABASE_URL="postgresql://username:password@localhost:****/******?schema=public"
 
 #NEXT_PUBLIC_API_BASE_URL="http://127.0.0.1:3000"
 
-BETTER_AUTH_URL="http://192.168.0.10:3000"
+BETTER_AUTH_URL=“yourIP”
 
-# 你的 Next.js API 地址
-NEXT_PUBLIC_API_BASE_URL="http://192.168.0.10:3000"
+#  Next.js API address
+NEXT_PUBLIC_API_BASE_URL="your ip"
 
 GMAIL_USER="localxiaoyang@gmail.com"
 GMAIL_APP_PASSWORD="qomdywkvbpacxjzh" 

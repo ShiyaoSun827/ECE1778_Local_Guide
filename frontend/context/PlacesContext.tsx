@@ -185,12 +185,38 @@ export function PlacesProvider({ children }: PlacesProviderProps) {
 
   const loadCustomPlaces = useCallback(async () => {
     try {
-      const data = await AsyncStorage.getItem(CUSTOM_STORAGE_KEY);
-      if (data) {
-        setPlaces(hydrateCustomPlaces(JSON.parse(data)));
+      // Try to load from API first
+      const response = await apiFetch("/api/places?type=mine");
+      if (response.ok) {
+        const data = await response.json();
+        const transformedPlaces = (data || []).map((place: any) => ({
+          ...place,
+          name: place.title || place.placeName || place.name || "",
+          isFavorite: place.isFavorite ?? false,
+          visitCount: place.visitCount ?? 0,
+          createdAt: place.createdAt || new Date().toISOString(),
+          updatedAt: place.updatedAt || new Date().toISOString(),
+          source: "custom" as const,
+        }));
+        setPlaces(transformedPlaces);
+      } else if (response.status === 401) {
+        // Not logged in, try AsyncStorage as fallback
+        const data = await AsyncStorage.getItem(CUSTOM_STORAGE_KEY);
+        if (data) {
+          setPlaces(hydrateCustomPlaces(JSON.parse(data)));
+        }
       }
     } catch (err) {
       console.error("Error loading custom places:", err);
+      // Fallback to AsyncStorage on error
+      try {
+        const data = await AsyncStorage.getItem(CUSTOM_STORAGE_KEY);
+        if (data) {
+          setPlaces(hydrateCustomPlaces(JSON.parse(data)));
+        }
+      } catch (storageErr) {
+        console.error("Error loading from AsyncStorage:", storageErr);
+      }
     } finally {
       setLoading(false);
     }
@@ -293,6 +319,7 @@ export function PlacesProvider({ children }: PlacesProviderProps) {
         const newPlace: Place = {
           ...savedPlace,
           id: savedPlace.id,
+          name: savedPlace.title || savedPlace.placeName || savedPlace.name || "",
           imageUri: savedPlace.imageUri,
           source: "custom",
           isFavorite: false,
@@ -352,10 +379,27 @@ export function PlacesProvider({ children }: PlacesProviderProps) {
   );
   const deletePlace = useCallback(
     async (id: string): Promise<void> => {
+      // Optimistically update UI
       const updatedPlaces = places.filter((place) => place.id !== id);
-      await saveCustomPlaces(updatedPlaces);
+      setPlaces(updatedPlaces);
+      
+      // Try to delete from API
+      try {
+        const response = await apiFetch(`/api/places/${id}`, {
+          method: "DELETE",
+        });
+        
+        if (!response.ok && response.status !== 404) {
+          // If delete fails, reload from API to sync
+          await loadCustomPlaces();
+        }
+      } catch (err) {
+        console.error("Error deleting place from API:", err);
+        // Reload from API to sync on error
+        await loadCustomPlaces();
+      }
     },
-    [places, saveCustomPlaces]
+    [places, loadCustomPlaces]
   );
 
 

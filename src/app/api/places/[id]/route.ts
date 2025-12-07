@@ -94,3 +94,34 @@ export async function PATCH(
     return NextResponse.json({ error: "Failed to update place" }, { status: 500 });
   }
 }
+
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const session = await auth.api.getSession({ headers: req.headers });
+  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const { id } = await params;
+
+  try {
+    // Verify the place belongs to the user before deleting
+    const place = await prisma.place.findUnique({
+      where: { id, userId: session.user.id },
+    });
+
+    if (!place) {
+      return NextResponse.json({ error: "Place not found" }, { status: 404 });
+    }
+
+    // Delete the place (cascade will handle related records)
+    await prisma.place.delete({
+      where: { id },
+    });
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Error deleting place:", error);
+    return NextResponse.json({ error: "Failed to delete place" }, { status: 500 });
+  }
+}

@@ -14,7 +14,7 @@ export async function uploadToSpaces(file: File, folder: string = "places"): Pro
   const bytes = await file.arrayBuffer();
   const buffer = Buffer.from(bytes);
   
-  // 生成唯一文件名，防止重名覆盖
+
   const fileName = `${folder}/${Date.now()}-${file.name.replace(/\s/g, '-')}`;
 
   await s3Client.send(
@@ -23,10 +23,10 @@ export async function uploadToSpaces(file: File, folder: string = "places"): Pro
       Key: fileName,
       Body: buffer,
       ContentType: file.type,
-      ACL: "public-read", // 设置为公开读取，以便前端显示
+      ACL: "public-read",
     })
   );
 
-  // 返回完整的图片访问 URL
+
   return `${process.env.DO_SPACES_ENDPOINT}/${process.env.DO_SPACES_BUCKET}/${fileName}`;
 }

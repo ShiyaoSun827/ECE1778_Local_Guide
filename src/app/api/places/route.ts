@@ -38,43 +38,68 @@ export async function POST(req: NextRequest) {
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   try {
-    // 1. 解析 FormData 而不是 JSON
     const formData = await req.formData();
+    
+    // 获取前端传来的原始分类标识 (可能是 slug，如 "food")
     const rawCategory = formData.get("category") as string;
+    
     const name = formData.get("name") as string;
     const description = formData.get("description") as string;
     const address = formData.get("address") as string;
     const latitude = parseFloat(formData.get("latitude") as string);
     const longitude = parseFloat(formData.get("longitude") as string);
-    const categoryId = (rawCategory && rawCategory !== "custom") ? rawCategory : null;
     
     const imageFile = formData.get("image") as File | null;
     let finalImageUri = null;
 
-    // 2. 如果有图片文件，上传到 DigitalOcean
+    // 1. 上传图片到 DigitalOcean
     if (imageFile && imageFile.size > 0) {
       finalImageUri = await uploadToSpaces(imageFile, "custom-places");
+    }
+
+    // 2. 处理分类 ID [关键修复]
+    // 数据库需要的是 Category 表的 uuid/cuid，而不是前端的 "food" 这种 slug
+    let dbCategoryId = null;
+
+    if (rawCategory && rawCategory !== "custom") {
+      // 尝试通过 slug (别名) 查找对应的真实 Category ID
+      const category = await prisma.category.findUnique({
+        where: { slug: rawCategory },
+      });
+      
+      if (category) {
+        dbCategoryId = category.id;
+      } else {
+        // 如果按 slug 找不到，可能前端传的就是 ID？尝试按 ID 找一下（可选）
+        // 或者直接忽略，避免外键报错
+        console.warn(`Category slug '${rawCategory}' not found in DB. Saving with null category.`);
+      }
     }
 
     // 3. 保存到数据库
     const place = await prisma.place.create({
       data: {
         userId: session.user.id,
-        title: name,           // 对应 PlaceFormData 的 name
-        placeName: name,       // 保持一致
+        title: name,
+        placeName: name,
         description: description || "",
         address: address || "",
         latitude,
         longitude,
-        imageUri: finalImageUri, // 保存 DO 返回的 URL
-        categoryId: categoryId , // 默认分类
+        imageUri: finalImageUri,
         
+        // 使用我们查找出来的真实 ID，或者是 null
+        categoryId: dbCategoryId, 
       },
     });
 
     return NextResponse.json(place);
   } catch (error) {
     console.error("Error creating place:", error);
-    return NextResponse.json({ error: "Failed to create place" }, { status: 500 });
+    // 返回具体的错误信息有助于调试，生产环境可以隐藏
+    return NextResponse.json(
+      { error: "Failed to create place", details: String(error) }, 
+      { status: 500 }
+    );
   }
 }

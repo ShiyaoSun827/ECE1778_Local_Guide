@@ -215,7 +215,7 @@ export function PlacesProvider({ children }: PlacesProviderProps) {
 
   const addPlace = useCallback(
     async (formData: PlaceFormData): Promise<Place> => {
-      // 构建 FormData 发送给后端
+   
       const data = new FormData();
       data.append("name", formData.name);
       data.append("description", formData.description ?? "");
@@ -224,12 +224,11 @@ export function PlacesProvider({ children }: PlacesProviderProps) {
       data.append("address", formData.address ?? "");
       data.append("category", formData.category ?? "custom");
 
-      // 处理图片上传
       if (formData.imageUri) {
         const fileName = formData.imageUri.split('/').pop() || "photo.jpg";
         const fileType = fileName.endsWith(".png") ? "image/png" : "image/jpeg";
         
-        // React Native 特有的 FormData 格式
+     
         data.append("image", {
           uri: formData.imageUri,
           name: fileName,
@@ -238,19 +237,11 @@ export function PlacesProvider({ children }: PlacesProviderProps) {
       }
 
       try {
-        // 调用后端 API，注意：发送 FormData 时通常不需要手动设置 Content-Type，fetch 会自动设置 boundary
-        // 假设 apiFetch 内部处理了 auth header
-        // 如果 apiFetch 强行设置了 'Content-Type': 'application/json'，请改用原生 fetch 并带上 token
-        
-        // 这里演示用原生 fetch 配合 apiFetch 获取 token 的逻辑（或者是修改 apiFetch 支持 formData）
-        // 假设 apiFetch 能处理或我们直接用标准 fetch:
-        
-        // 临时直接调用 fetch 以确保 FormData 正确
-        // 注意：你需要确保 headers 里包含认证 token (session cookie 可能会自动携带)
+
         const response = await apiFetch("/api/places", {
             method: "POST",
             headers: {
-                // 不要设置 Content-Type，让浏览器/RN 自动处理 multipart/form-data boundary
+              
             },
             body: data,
         });
@@ -261,10 +252,9 @@ export function PlacesProvider({ children }: PlacesProviderProps) {
 
         const savedPlace = await response.json();
 
-        // 将后端返回的 Place (包含 DO 的图片 URL) 格式化为前端 Place 类型
         const newPlace: Place = {
           ...savedPlace,
-          // 确保字段映射正确
+     
           id: savedPlace.id,
           imageUri: savedPlace.imageUri, 
           source: "custom",
@@ -272,14 +262,8 @@ export function PlacesProvider({ children }: PlacesProviderProps) {
           visitCount: 0,
         };
 
-        // 更新本地状态，这样 UI 会立即刷新
         setPlaces((prev) => [newPlace, ...prev]);
-        
-        // 可选：如果你仍然希望在离线时能看到，可以更新 AsyncStorage，
-        // 但既然数据源已变为数据库，建议主要依赖 API。
-        // 为了兼容旧逻辑，我们可以继续保存到本地缓存：
-        // const updatedPlaces = [newPlace, ...places];
-        // await saveCustomPlaces(updatedPlaces);
+   
 
         return newPlace;
 
@@ -288,26 +272,48 @@ export function PlacesProvider({ children }: PlacesProviderProps) {
         throw err;
       }
     },
-    [places] // 移除 saveCustomPlaces 依赖，如果不再使用
+    [places] 
   );
 
   const updatePlace = useCallback(
     async (id: string, updates: Partial<Place>): Promise<void> => {
+
+      const originalPlaces = [...places]; 
       const updatedPlaces = places.map((place) =>
         place.id === id
           ? {
               ...place,
               ...updates,
               updatedAt: new Date().toISOString(),
-              source: "custom",
-            }
+              source: "custom" as const, 
           : place
       );
-      await saveCustomPlaces(updatedPlaces);
-    },
-    [places, saveCustomPlaces]
-  );
+      
+    
+      setPlaces(updatedPlaces);
+     
+      try {
+        const response = await apiFetch(`/api/places/${id}`, {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(updates),
+        });
 
+        if (!response.ok) {
+          throw new Error("Failed to update place on server");
+        }
+      } catch (err) {
+        console.error("Error syncing update to server:", err);
+        
+        setPlaces(originalPlaces); 
+      
+        alert("Failed to save changes. Please check your connection.");
+      }
+    },
+    [places] 
+  );
   const deletePlace = useCallback(
     async (id: string): Promise<void> => {
       const updatedPlaces = places.filter((place) => place.id !== id);

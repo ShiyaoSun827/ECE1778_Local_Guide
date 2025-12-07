@@ -22,7 +22,9 @@
     android:theme="@style/AppTheme" 
     android:supportsRtl="true"
     android:usesCleartextTraffic="true">  
-    
+    <meta-data
+      android:name="com.google.android.geo.API_KEY"
+      android:value="AIzaSyAU6vsj5SAkxy1or3rjq66VoMSnshNTl5s"/>
     <activity android:name=".MainActivity" android:configChanges="keyboard|keyboardHidden|orientation|screenSize|screenLayout|uiMode" android:launchMode="singleTask" android:windowSoftInputMode="adjustResize" android:theme="@style/Theme.App.SplashScreen" android:exported="true">
       <intent-filter>
         <action android:name="android.intent.action.MAIN"/>

@@ -24,7 +24,7 @@ import {
 import { useLocationPermission } from "../hooks/useLocationPermission";
 import { calculateDistance } from "../utils";
 import { apiFetch } from "../lib/apiClient"; 
-
+import * as ImageManipulator from 'expo-image-manipulator';
 const CUSTOM_STORAGE_KEY = "@localguide:customPlaces";
 
 const MIN_DISCOVER_REFRESH_INTERVAL = 30 * 1000;
@@ -230,7 +230,6 @@ export function PlacesProvider({ children }: PlacesProviderProps) {
 
   const addPlace = useCallback(
     async (formData: PlaceFormData): Promise<Place> => {
-   
       const data = new FormData();
       data.append("name", formData.name);
       data.append("description", formData.description ?? "");
@@ -239,47 +238,68 @@ export function PlacesProvider({ children }: PlacesProviderProps) {
       data.append("address", formData.address ?? "");
       data.append("category", formData.category ?? "custom");
 
+      // 🖼️ 修复后的图片处理逻辑 (压缩 + 格式修正)
       if (formData.imageUri) {
-        const fileName = formData.imageUri.split('/').pop() || "photo.jpg";
-        const fileType = fileName.endsWith(".png") ? "image/png" : "image/jpeg";
-        
-     
-        data.append("image", {
-          uri: formData.imageUri,
-          name: fileName,
-          type: fileType,
-        } as any); 
+        try {
+          console.log("Starting image compression..."); // 添加日志方便调试
+          
+          // 1. 压缩图片: 限制宽度 1080px, 质量 0.7
+          const manipResult = await ImageManipulator.manipulateAsync(
+            formData.imageUri,
+            [{ resize: { width: 1080 } }], 
+            { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG }
+          );
+
+          const fileName = formData.imageUri.split('/').pop() || "photo.jpg";
+
+          // 2. 使用压缩后的 URI
+          // ⚠️ Android 必须显式指定 type: 'image/jpeg'
+          data.append("image", {
+            uri: manipResult.uri, // 使用压缩后的新路径
+            name: fileName,
+            type: "image/jpeg",   
+          } as any);
+          
+          console.log("Image compressed successfully");
+
+        } catch (compressError) {
+          console.error("Image compression failed:", compressError);
+          // 备选方案：如果压缩失败，尝试传原图（虽然可能会挂，但比直接崩溃好）
+          data.append("image", {
+            uri: formData.imageUri,
+            name: "photo.jpg",
+            type: "image/jpeg",
+          } as any);
+        }
       }
 
       try {
-
         const response = await apiFetch("/api/places", {
-            method: "POST",
-            headers: {
-              
-            },
-            body: data,
+          method: "POST",
+          // 不要手动设置 Content-Type，让 fetch 自动处理 Boundary
+          headers: {}, 
+          body: data,
         });
 
         if (!response.ok) {
-            throw new Error("Failed to upload place");
+          // 获取后端返回的具体错误信息
+          const errorText = await response.text(); 
+          console.error("Server Error:", errorText);
+          throw new Error(`Upload failed: ${response.status}`);
         }
 
         const savedPlace = await response.json();
 
         const newPlace: Place = {
           ...savedPlace,
-     
           id: savedPlace.id,
-          imageUri: savedPlace.imageUri, 
+          imageUri: savedPlace.imageUri,
           source: "custom",
-          isFavorite: false, 
+          isFavorite: false,
           visitCount: 0,
         };
 
         setPlaces((prev) => [newPlace, ...prev]);
-   
-
         return newPlace;
 
       } catch (err) {
@@ -287,7 +307,7 @@ export function PlacesProvider({ children }: PlacesProviderProps) {
         throw err;
       }
     },
-    [places] 
+    [places]
   );
 
   const updatePlace = useCallback(

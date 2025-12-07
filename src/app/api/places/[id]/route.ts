@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
+import { prisma } from "@/lib/prisma";
 
 
 export async function PATCH(
@@ -21,10 +19,23 @@ export async function PATCH(
 
     const updateData: any = {};
     if (typeof body.isFavorite === 'boolean') updateData.isFavorite = body.isFavorite;
-    if (typeof body.visitCount === 'number') updateData.visitCount = body.visitCount;
+    if (body.title !== undefined) updateData.title = body.title;
+    if (body.description !== undefined) updateData.description = body.description;
+    if (body.address !== undefined) updateData.address = body.address;
+    if (body.imageUri !== undefined) updateData.imageUri = body.imageUri;
+    if (body.categoryId !== undefined) updateData.categoryId = body.categoryId;
 
+    if (Object.keys(updateData).length === 0) {
+      const place = await prisma.place.findUnique({
+        where: { id, userId: session.user.id },
+      });
+      if (!place) {
+        return NextResponse.json({ error: "Place not found" }, { status: 404 });
+      }
+      return NextResponse.json(place);
+    }
 
-    const result = await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx: any) => {
 
       const updatedPlace = await tx.place.update({
         where: { 

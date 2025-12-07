@@ -2,7 +2,7 @@
 import { authClient } from "./authClient";
 
 
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://192.168.0.10:3000";
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL ?? "http://192.168.0.10:3000";
 
 type ApiInit = RequestInit & {
 

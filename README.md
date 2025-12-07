@@ -810,7 +810,7 @@ A video demonstration of the Local Guide application is available at:
 
 **Primary Responsibilities**:
 - Backend development and API implementation
-- Android APK build configuration (backend side)
+- Android APK build configuration 
 
 **Key Contributions**:
 - Designed and implemented backend API routes using Next.js
@@ -842,7 +842,7 @@ A video demonstration of the Local Guide application is available at:
 **Primary Responsibilities**:
 - Frontend development and UI implementation
 - Deployment configuration and setup
-- Android APK build (frontend side)
+- Android APK build 
 
 **Key Contributions**:
 - Developed frontend features and user interface components

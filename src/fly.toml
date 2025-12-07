@@ -12,10 +12,8 @@ primary_region = "yyz"
   PORT = "3000"
   NODE_ENV = "production"
 
-# [deploy]
-#   release_command = "npx prisma@6.19.0 migrate deploy"
-#   Note: Release command disabled due to memory issues. Run migrations manually if needed:
-#   fly ssh console -C "cd /app && npx prisma migrate deploy"
+[deploy]
+  release_command = "npx prisma@6.19.0 migrate deploy"
 
 [http_service]
   internal_port = 3000

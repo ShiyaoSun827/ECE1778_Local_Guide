@@ -286,10 +286,11 @@ export function PlacesProvider({ children }: PlacesProviderProps) {
               ...updates,
               updatedAt: new Date().toISOString(),
               source: "custom" as const, 
+            }
           : place
       );
       
-    
+     
       setPlaces(updatedPlaces);
      
       try {
@@ -306,13 +307,13 @@ export function PlacesProvider({ children }: PlacesProviderProps) {
         }
       } catch (err) {
         console.error("Error syncing update to server:", err);
-        
+       
         setPlaces(originalPlaces); 
-      
+        
         alert("Failed to save changes. Please check your connection.");
       }
     },
-    [places] 
+    [places]
   );
   const deletePlace = useCallback(
     async (id: string): Promise<void> => {

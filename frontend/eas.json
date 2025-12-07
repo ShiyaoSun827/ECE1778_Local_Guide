@@ -14,8 +14,10 @@
       },
       "env": {
         "EAS_BUILD_NPM_INSTALL_ARGS": "--legacy-peer-deps",
-        "EXPO_PUBLIC_API_BASE_URL": "http://192.168.0.10:3000",
-        "EXPO_PUBLIC_API_URL": "http://192.168.0.10:3000",
+        //"EXPO_PUBLIC_API_BASE_URL": "http://192.168.0.10:3000",
+        //"EXPO_PUBLIC_API_URL": "http://192.168.0.10:3000",
+        "EXPO_PUBLIC_API_BASE_URL": "https://local-guide-backend.fly.dev",
+        "EXPO_PUBLIC_API_URL": "https://local-guide-backend.fly.dev",
         "EXPO_PUBLIC_GOOGLE_PLACES_API_KEY": "AIzaSyAygeIYYtdDUOEHRM0R2bO67qsnfugUAvQ"
       }
     },

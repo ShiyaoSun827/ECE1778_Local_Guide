@@ -4,7 +4,6 @@ import { prisma } from "@/lib/prisma";
 
 export async function GET(req: NextRequest) {
   try {
-    // 获取最新的 20 条帖子，包含用户信息
     const posts = await prisma.place.findMany({
       take: 20,
       orderBy: {

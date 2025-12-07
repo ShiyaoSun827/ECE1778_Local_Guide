@@ -16,19 +16,15 @@ enum Role {
   superadmin
 }
 
-//User：用户 + 角色 + 邮箱是否验证
 model User {
   id            String  @id @default(cuid())
   email         String  @unique
   name          String?
-  // 如果你有密码字段，就保留：
-  // password      String
   emailVerified Boolean @default(false)
   image         String?
   role          String  @default("user")
-  bio           String? // 个人简介
-  location      String? // 用户所在地
-  //  Better Auth / admin 插件用
+  bio           String?
+  location      String?
   banned        Boolean @default(false)
 
   createdAt DateTime @default(now())
@@ -42,7 +38,6 @@ model User {
   favorites     Favorite[]
 }
 
-//Session：登录 session（支持 logout）
 model Session {
   id     String @id @default(cuid())
   userId String
@@ -58,14 +53,13 @@ model Session {
   updatedAt DateTime @updatedAt
 }
 
-// Account：邮箱,密码账号
 model Account {
   id     String @id @default(cuid())
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  providerId            String // 用 "email"
-  accountId             String // 用 邮箱
+  providerId            String
+  accountId             String
   accessToken           String?
   refreshToken          String?
   accessTokenExpiresAt  DateTime?
@@ -73,7 +67,6 @@ model Account {
   scope                 String?
   idToken               String?
 
-  //  Email+Password 模式下存密码哈希
   password String?
 
   createdAt DateTime @default(now())
@@ -82,12 +75,10 @@ model Account {
   @@unique([providerId, accountId])
 }
 
-//Verification：邮箱验证 / 重置密码验证码
-
 model Verification {
   id         String   @id @default(cuid())
-  identifier String // 比如 email
-  value      String // 验证 token
+  identifier String
+  value      String
   expiresAt  DateTime
 
   createdAt DateTime @default(now())
@@ -96,21 +87,15 @@ model Verification {
   userId    String?
 }
 
-//Local guide 的业务核心标
-
-//Category：地点分类
-
 model Category {
   id    String  @id @default(cuid())
   name  String
-  slug  String  @unique // 比如 "cafe" / "park"
-  color String? // 前端标签颜色
-  icon  String? // 前端图标名
+  slug  String  @unique
+  color String?
+  icon  String?
 
   places Place[]
 }
-
-//Place：Local Guide 的地点
 
 model Place {
   id String @id @default(cuid())
@@ -118,15 +103,15 @@ model Place {
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  title       String // [修改意图] 用户的自定义标题 (例如: "我的秘密约会圣地")
-  placeName   String? // [新增字段] Google Maps 上的实际地点名 (例如: "CN Tower")
-  description String? // 帖子内容/备注
-  address     String? // 实际地址
+  title       String
+  placeName   String?
+  description String?
+  address     String?
   latitude    Float
   longitude   Float
 
   imageUri   String?
-  isFavorite Boolean @default(false) // [注意] 这目前是“私有”的收藏状态
+  isFavorite Boolean @default(false)
 
   categoryId String?
   category   Category? @relation(fields: [categoryId], references: [id])
@@ -137,7 +122,6 @@ model Place {
   comments Comment[]
 }
 
-//Comment，地点下的评论日志
 model Comment {
   id String @id @default(cuid())
 
@@ -158,10 +142,8 @@ model Favorite {
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  // 收藏目标的 ID (可能是 Google Place ID，也可能是系统内 Place ID)
   placeId String
 
-  // 缓存地点的快照信息，便于列表展示
   name        String?
   description String?
   address     String?
@@ -169,10 +151,9 @@ model Favorite {
   longitude   Float
   imageUri    String?
   category    String?
-  source      String  @default("google") // "google" | "custom"
+  source      String  @default("google")
 
   createdAt DateTime @default(now())
 
-  // 防止同一用户重复收藏同一地点
   @@unique([userId, placeId])
 }

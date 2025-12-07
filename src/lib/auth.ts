@@ -1,4 +1,3 @@
-// src/lib/auth.ts（只看 emailVerification 这一块）
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { PrismaClient } from "@prisma/client";

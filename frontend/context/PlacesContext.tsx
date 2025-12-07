@@ -9,6 +9,7 @@ import React, {
   useMemo,
   useRef,
 } from "react";
+import { Alert } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Place, PlaceFormData } from "../types";
 import {
@@ -78,10 +79,10 @@ export function PlacesProvider({ children }: PlacesProviderProps) {
   const [favorites, setFavorites] = useState<Place[]>([]);
   const refreshFavorites = async () => {
   try {
-    const res = await apiFetch("/api/favorites"); // 调用你写好的 GET /api/favorites
+    const res = await apiFetch("/api/favorites");
     if (res.ok) {
       const data = await res.json();
-      setFavorites(data); // 更新前端状态
+      setFavorites(data);
     } else {
       console.error("Failed to fetch favorites", res.status);
     }
@@ -264,12 +265,10 @@ export function PlacesProvider({ children }: PlacesProviderProps) {
       data.append("address", formData.address ?? "");
       data.append("category", formData.category ?? "custom");
 
-      // 🖼️ 修复后的图片处理逻辑 (压缩 + 格式修正)
       if (formData.imageUri) {
         try {
-          console.log("Starting image compression..."); // 添加日志方便调试
+          console.log("Starting image compression...");
           
-          // 1. 压缩图片: 限制宽度 1080px, 质量 0.7
           const manipResult = await ImageManipulator.manipulateAsync(
             formData.imageUri,
             [{ resize: { width: 1080 } }], 
@@ -278,10 +277,8 @@ export function PlacesProvider({ children }: PlacesProviderProps) {
 
           const fileName = formData.imageUri.split('/').pop() || "photo.jpg";
 
-          // 2. 使用压缩后的 URI
-          // ⚠️ Android 必须显式指定 type: 'image/jpeg'
           data.append("image", {
-            uri: manipResult.uri, // 使用压缩后的新路径
+            uri: manipResult.uri,
             name: fileName,
             type: "image/jpeg",   
           } as any);
@@ -290,7 +287,6 @@ export function PlacesProvider({ children }: PlacesProviderProps) {
 
         } catch (compressError) {
           console.error("Image compression failed:", compressError);
-          // 备选方案：如果压缩失败，尝试传原图（虽然可能会挂，但比直接崩溃好）
           data.append("image", {
             uri: formData.imageUri,
             name: "photo.jpg",
@@ -302,13 +298,11 @@ export function PlacesProvider({ children }: PlacesProviderProps) {
       try {
         const response = await apiFetch("/api/places", {
           method: "POST",
-          // 不要手动设置 Content-Type，让 fetch 自动处理 Boundary
           headers: {}, 
           body: data,
         });
 
         if (!response.ok) {
-          // 获取后端返回的具体错误信息
           const errorText = await response.text(); 
           console.error("Server Error:", errorText);
           throw new Error(`Upload failed: ${response.status}`);
@@ -372,7 +366,7 @@ export function PlacesProvider({ children }: PlacesProviderProps) {
        
         setPlaces(originalPlaces); 
         
-        alert("Failed to save changes. Please check your connection.");
+        Alert.alert("Error", "Failed to save changes. Please check your connection.");
       }
     },
     [places]
@@ -470,7 +464,7 @@ export function PlacesProvider({ children }: PlacesProviderProps) {
         console.error("Error syncing favorite:", err);
      
         setFavorites(prevFavorites);
-        alert("Failed to sync favorite. Please check your connection.");
+        Alert.alert("Error", "Failed to sync favorite. Please check your connection.");
       }
     },
     [

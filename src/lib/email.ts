@@ -15,7 +15,7 @@ export async function sendEmail({ to, subject, html }: SendEmailParams) {
     console.error(
       "[sendEmail] GMAIL_USER or GMAIL_APP_PASSWORD not set. Email not sent."
     );
-    console.error({ to, subject /* 不打印 html 避免太长 */ });
+    console.error({ to, subject });
     return;
   }
 

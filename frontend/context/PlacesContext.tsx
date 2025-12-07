@@ -60,6 +60,7 @@ interface PlacesContextType {
   getPlace: (id: string) => Place | undefined;
   getFavorites: () => Place[];
   refresh: () => Promise<void>;
+  refreshFavorites: () => Promise<void>;
   refreshDiscover: (options?: RefreshDiscoverOptions) => Promise<void>;
   searchGooglePlaces: (query: string) => Promise<void>;
   fetchPlaceDetails: (id: string) => Promise<Place | undefined>;
@@ -75,6 +76,20 @@ interface PlacesProviderProps {
 export function PlacesProvider({ children }: PlacesProviderProps) {
   const [places, setPlaces] = useState<Place[]>([]);
   const [favorites, setFavorites] = useState<Place[]>([]);
+  const refreshFavorites = async () => {
+  try {
+    const res = await apiFetch("/api/favorites"); // 调用你写好的 GET /api/favorites
+    if (res.ok) {
+      const data = await res.json();
+      setFavorites(data); // 更新前端状态
+    } else {
+      console.error("Failed to fetch favorites", res.status);
+    }
+  } catch (error) {
+    console.error("Error fetching favorites:", error);
+  }
+};
+
   const [discoverPlaces, setDiscoverPlaces] = useState<Place[]>([]);
   const [searchResults, setSearchResults] = useState<Place[]>([]);
   const [loading, setLoading] = useState(true);
@@ -632,6 +647,7 @@ export function PlacesProvider({ children }: PlacesProviderProps) {
     incrementVisitCount,
     getPlace,
     getFavorites,
+    refreshFavorites,
     refresh,
     refreshDiscover,
     searchGooglePlaces,

@@ -17,13 +17,21 @@ import {
 import { colors, spacing } from "../../theme";
 import { authClient } from "../../lib/authClient";
 import { usePlaces } from "../../hooks";
-
+import  {  useEffect, useCallback } from "react";
+import { useFocusEffect } from "expo-router";
 export default function FavoritesScreen() {
   const router = useRouter();
   const { data: session, isPending } = authClient.useSession();
-  const { getFavorites, toggleFavorite } = usePlaces();
+  const { getFavorites, toggleFavorite, refreshFavorites } = usePlaces();
 
-
+  useFocusEffect(
+    useCallback(() => {
+      if (session?.user) {
+        console.log("Refreshing favorites...");
+        refreshFavorites?.(); // 只有登录了才拉取
+      }
+    }, [session?.user])
+  );
   const favorites = useMemo(() => getFavorites(), [getFavorites]);
 
   const handlePlacePress = (id: string) => {

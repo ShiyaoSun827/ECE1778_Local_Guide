@@ -14,7 +14,7 @@ interface PostCardProps {
 }
 
 export function PostCard({ place, userLocation, onPress }: PostCardProps) {
-  // 计算距离
+
   const distance = userLocation
     ? formatDistance(
         userLocation.latitude,
@@ -30,14 +30,14 @@ export function PostCard({ place, userLocation, onPress }: PostCardProps) {
       onPress={onPress}
       activeOpacity={0.9}
     >
-      {/* 1. 大图区域 */}
+    
       <Image
         source={{ uri: place.imageUri || "https://via.placeholder.com/400x300" }}
         style={styles.image}
         resizeMode="cover"
       />
       
-      {/* 距离 Badge */}
+     
       {distance && (
         <View style={styles.distanceBadge}>
           <Ionicons name="navigate" size={12} color="#fff" />
@@ -46,7 +46,7 @@ export function PostCard({ place, userLocation, onPress }: PostCardProps) {
       )}
 
       <View style={styles.content}>
-        {/* 2. 标题和地点 */}
+        
         <Text style={styles.title} numberOfLines={1}>{place.title}</Text>
         
         <View style={styles.locationRow}>
@@ -56,7 +56,7 @@ export function PostCard({ place, userLocation, onPress }: PostCardProps) {
           </Text>
         </View>
 
-        {/* 3. 用户信息栏 */}
+       
         <View style={styles.footer}>
           <View style={styles.userRow}>
             <Image
@@ -68,7 +68,7 @@ export function PostCard({ place, userLocation, onPress }: PostCardProps) {
             </Text>
           </View>
           
-          {/* 预留点赞按钮 */}
+      
           <TouchableOpacity style={styles.likeButton}>
              <Ionicons name="heart-outline" size={20} color={colors.textSecondary} />
           </TouchableOpacity>

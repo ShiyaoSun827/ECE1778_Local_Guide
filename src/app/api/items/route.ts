@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 
 /**
  * GET /api/items
- * 所有人（包括游客）都可以看列表
+
  */
 export async function GET() {
   const items = await prisma.place.findMany({
@@ -28,11 +28,7 @@ export async function GET() {
   return NextResponse.json(items);
 }
 
-/**
- * POST /api/items
- * 只有登录用户可以新增地点
- * body: { name, description?, latitude, longitude, imageUri? }
- */
+
 export async function POST(request: Request) {
   const session = await auth.api.getSession({ headers: request.headers });
 

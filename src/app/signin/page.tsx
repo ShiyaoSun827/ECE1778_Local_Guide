@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-// ✅ 注意这里的路径：从 app/api/auth/actions.ts 引
+
 import { signInWithEmail } from "@/app/api/auth/action";
 import NavBarClient from "@/components/NavBarClient";
 import Link from "next/link";
@@ -14,7 +14,7 @@ export default function SignInPage() {
   async function handleSignIn(formData: FormData) {
     try {
       const result = await signInWithEmail(formData);
-      // result 结构：{ success, message, redirectTo? }
+      
       setMessage(result.message ?? "");
       console.log("[Local Guide] Sign-in result:", result);
 

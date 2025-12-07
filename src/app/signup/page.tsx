@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-// ✅ 注意这里的路径
+
 import { signUpWithEmail } from "@/app/api/auth/action";
 import NavBarClient from "@/components/NavBarClient";
 import Link from "next/link";
@@ -47,8 +47,7 @@ export default function SignUpPage() {
         "✅ Signup successful! Please check your email to verify your Local Guide account before signing in.";
       setFormMessage(finalMessage);
 
-      // 注册完一般不立刻跳，等用户点完邮件再回来登录；
-      // 你要自动跳也可以，例如两秒后跳到 /signin：
+  
       setTimeout(() => {
         router.push("/signin");
       }, 2000);

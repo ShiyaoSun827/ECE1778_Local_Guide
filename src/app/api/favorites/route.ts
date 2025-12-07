@@ -1,9 +1,9 @@
 // src/app/api/favorites/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth"; // 确保路径对应你的实际 auth 库位置
-import { prisma } from "@/lib/prisma"; // 确保路径对应你的 prisma 实例
+import { auth } from "@/lib/auth"; 
+import { prisma } from "@/lib/prisma";
 
-// GET: 获取当前用户的收藏列表
+
 export async function GET(req: NextRequest) {
   const session = await auth.api.getSession({ headers: req.headers });
 
@@ -17,7 +17,7 @@ export async function GET(req: NextRequest) {
       orderBy: { createdAt: "desc" },
     });
 
-    // 将数据库格式转换为前端使用的 Place 格式
+
     const formattedFavorites = favorites.map((fav) => ({
       id: fav.placeId,
       name: fav.name || "Unknown Place",
@@ -43,7 +43,7 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// POST: 添加收藏
+
 export async function POST(req: NextRequest) {
   console.log("[/api/favorites] cookies:", req.headers.get("cookie"));
   const session = await auth.api.getSession({ headers: req.headers });
@@ -54,17 +54,17 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    // 前端传来的数据可能包含 id 或 placeId，这里统一处理
+
     const { id, name, description, address, latitude, longitude, imageUri, category, source } = body;
 
     const favorite = await prisma.favorite.upsert({
       where: {
         userId_placeId: {
           userId: session.user.id,
-          placeId: id, // 使用地点的原始 ID 作为 placeId
+          placeId: id, 
         },
       },
-      update: {}, // 如果已存在，不做任何修改
+      update: {}, 
       create: {
         userId: session.user.id,
         placeId: id,
@@ -89,7 +89,7 @@ export async function POST(req: NextRequest) {
   }
 }
 
-// DELETE: 取消收藏
+
 export async function DELETE(req: NextRequest) {
   const session = await auth.api.getSession({ headers: req.headers });
   if (!session?.user) {
@@ -115,7 +115,7 @@ export async function DELETE(req: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (err) {
-    // 如果记录不存在 (P2025)，通常可以视为成功删除
+  
     console.error("[DELETE /api/favorites] error:", err);
     return NextResponse.json(
       { error: "Failed to remove favorite" },

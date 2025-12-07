@@ -28,7 +28,7 @@ export default function FavoritesScreen() {
     useCallback(() => {
       if (session?.user) {
         console.log("Refreshing favorites...");
-        refreshFavorites?.(); // 只有登录了才拉取
+        refreshFavorites?.(); 
       }
     }, [session?.user])
   );

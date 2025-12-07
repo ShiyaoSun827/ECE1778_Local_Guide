@@ -197,7 +197,38 @@ DO_SPACES_REGION=tor1
 DO_SPACES_ENDPOINT=https://tor1.digitaloceanspaces.com
 CDN_URL=https://movies-images.tor1.cdn.digitaloceanspaces.com
 ```
-
+7. **frontend/eas.json**
+```bash
+{
+  "cli": {
+    "version": ">= 16.28.0"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal"
+    },
+    "preview": {
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "EAS_BUILD_NPM_INSTALL_ARGS": "--legacy-peer-deps",
+        "EXPO_PUBLIC_API_BASE_URL": "换成你自己的IP或者fly io",
+        "EXPO_PUBLIC_API_URL": "换成你自己的IP或者fly io",,
+        "EXPO_PUBLIC_GOOGLE_PLACES_API_KEY": "AIzaSyAU6vsj5SAkxy1or3rjq66VoMSnshNTl5s"
+      }
+    },
+    "production": {
+      "distribution": "store"
+    }
+  },
+  "submit": {
+    "production": {}
+  }
+}
+```
 
 ---
 

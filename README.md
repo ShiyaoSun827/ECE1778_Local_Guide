@@ -443,8 +443,17 @@ DATABASE_URL="postgresql://username:password@localhost:5432/local_guide?schema=p
 
 # Better Auth
 BETTER_AUTH_SECRET="your-secret-key-here"
+
+#If you plan to run only the frontend and host the backend on Fly.io, then enable these two URLs.(We have already deployed our backend on Fly.io, so if you just want to try the app without setting up your own backend, simply activate these.)
+#BETTER_AUTH_URL="https://local-guide-backend.fly.dev"
+#NEXT_PUBLIC_API_BASE_URL="https://local-guide-backend.fly.dev"
+
+#Otherwize, keep these
 BETTER_AUTH_URL="http://your-ip:3000"
 NEXT_PUBLIC_API_BASE_URL="http://your-ip:3000"
+
+
+
 
 # Email (Gmail)
 GMAIL_USER="localxiaoyang@gmail.com"

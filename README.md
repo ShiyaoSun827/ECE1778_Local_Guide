@@ -485,11 +485,20 @@ npm install
 **Configure Environment Variables** (`frontend/.env`):
 
 ```env
-# Backend API URL (use your computer's LAN IP for physical devices)
-EXPO_PUBLIC_API_BASE_URL="http://192.168.2.11:3000"
+EXPO_PUBLIC_API_BASE_URL=https://local-guide-backend.fly.dev
 
+# Local development backend URL, No need for the cloud deployment URL during development
+#EXPO_PUBLIC_API_BASE_URL="http://192.168.0.10:3000"
 # Google Places API Key
-EXPO_PUBLIC_GOOGLE_PLACES_API_KEY="AIzaSyAygeIYYtdDUOEHRM0R2bO67qsnfugUAvQ"
+EXPO_PUBLIC_GOOGLE_PLACES_API_KEY=AIzaSyAygeIYYtdDUOEHRM0R2bO67qsnfugUAvQ
+# DigitalOcean Spaces Config
+USE_CDN=true
+DO_SPACES_KEY=DO801NQ7TPZ2MN8DK46L
+DO_SPACES_SECRET=VXYs+VmHMCkl6p47WFNExhagrOqLiaXjlMfaODGNnEk
+DO_SPACES_BUCKET=movies-images
+DO_SPACES_REGION=tor1
+DO_SPACES_ENDPOINT=https://tor1.digitaloceanspaces.com
+CDN_URL=https://movies-images.tor1.cdn.digitaloceanspaces.com
 
 # OpenWeather API Key (optional, Open-Meteo is used by default)
 EXPO_PUBLIC_OPENWEATHER_API_KEY="your_openweather_key"
@@ -672,8 +681,8 @@ npx expo run:ios     # Run on iOS
       },
       "env": {
         "EAS_BUILD_NPM_INSTALL_ARGS": "--legacy-peer-deps",
-        "EXPO_PUBLIC_API_BASE_URL": "http://your-ip:3000",
-        "EXPO_PUBLIC_API_URL": "http://your-ip:3000",
+        "EXPO_PUBLIC_API_BASE_URL": "https://local-guide-backend.fly.dev",
+        "EXPO_PUBLIC_API_URL": "https://local-guide-backend.fly.dev",
         "EXPO_PUBLIC_GOOGLE_PLACES_API_KEY": "AIzaSyAygeIYYtdDUOEHRM0R2bO67qsnfugUAvQ"
       }
     },
@@ -752,11 +761,10 @@ DO_SPACES_ENDPOINT="https://tor1.digitaloceanspaces.com"
 CDN_URL="https://movies-images.tor1.cdn.digitaloceanspaces.com"
 ```
 
-**Frontend** (set in `frontend/eas.json` build profile):
-- `EXPO_PUBLIC_API_BASE_URL` - Your backend IP or Fly.io URL
-- `EXPO_PUBLIC_API_URL` - Same as above
-- `EXPO_PUBLIC_GOOGLE_PLACES_API_KEY` - Your Google Places API key
-- `EAS_BUILD_NPM_INSTALL_ARGS` - Set to `"--legacy-peer-deps"` if needed
+**Frontend** (set in `frontend/eas.json` build profile or `frontend/.env`):
+- `EXPO_PUBLIC_API_BASE_URL` - `https://local-guide-backend.fly.dev`
+- `EXPO_PUBLIC_GOOGLE_PLACES_API_KEY` - `AIzaSyAygeIYYtdDUOEHRM0R2bO67qsnfugUAvQ`
+- `EAS_BUILD_NPM_INSTALL_ARGS` - `--legacy-peer-deps`
 
 ### Video Demo
 

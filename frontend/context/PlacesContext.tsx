@@ -215,27 +215,80 @@ export function PlacesProvider({ children }: PlacesProviderProps) {
 
   const addPlace = useCallback(
     async (formData: PlaceFormData): Promise<Place> => {
-      const now = new Date().toISOString();
-      const newPlace: Place = {
-        id: Date.now().toString(),
-        name: formData.name,
-        description: formData.description ?? "",
-        latitude: formData.latitude,
-        longitude: formData.longitude,
-        imageUri: formData.imageUri,
-        category: formData.category,
-        address: formData.address,
-        isFavorite: false,
-        visitCount: 0,
-        createdAt: now,
-        updatedAt: now,
-        source: "custom",
-      };
-      const updatedPlaces = [newPlace, ...places];
-      await saveCustomPlaces(updatedPlaces);
-      return newPlace;
+      // 构建 FormData 发送给后端
+      const data = new FormData();
+      data.append("name", formData.name);
+      data.append("description", formData.description ?? "");
+      data.append("latitude", formData.latitude.toString());
+      data.append("longitude", formData.longitude.toString());
+      data.append("address", formData.address ?? "");
+      data.append("category", formData.category ?? "custom");
+
+      // 处理图片上传
+      if (formData.imageUri) {
+        const fileName = formData.imageUri.split('/').pop() || "photo.jpg";
+        const fileType = fileName.endsWith(".png") ? "image/png" : "image/jpeg";
+        
+        // React Native 特有的 FormData 格式
+        data.append("image", {
+          uri: formData.imageUri,
+          name: fileName,
+          type: fileType,
+        } as any); 
+      }
+
+      try {
+        // 调用后端 API，注意：发送 FormData 时通常不需要手动设置 Content-Type，fetch 会自动设置 boundary
+        // 假设 apiFetch 内部处理了 auth header
+        // 如果 apiFetch 强行设置了 'Content-Type': 'application/json'，请改用原生 fetch 并带上 token
+        
+        // 这里演示用原生 fetch 配合 apiFetch 获取 token 的逻辑（或者是修改 apiFetch 支持 formData）
+        // 假设 apiFetch 能处理或我们直接用标准 fetch:
+        
+        // 临时直接调用 fetch 以确保 FormData 正确
+        // 注意：你需要确保 headers 里包含认证 token (session cookie 可能会自动携带)
+        const response = await apiFetch("/api/places", {
+            method: "POST",
+            headers: {
+                // 不要设置 Content-Type，让浏览器/RN 自动处理 multipart/form-data boundary
+            },
+            body: data,
+        });
+
+        if (!response.ok) {
+            throw new Error("Failed to upload place");
+        }
+
+        const savedPlace = await response.json();
+
+        // 将后端返回的 Place (包含 DO 的图片 URL) 格式化为前端 Place 类型
+        const newPlace: Place = {
+          ...savedPlace,
+          // 确保字段映射正确
+          id: savedPlace.id,
+          imageUri: savedPlace.imageUri, 
+          source: "custom",
+          isFavorite: false, 
+          visitCount: 0,
+        };
+
+        // 更新本地状态，这样 UI 会立即刷新
+        setPlaces((prev) => [newPlace, ...prev]);
+        
+        // 可选：如果你仍然希望在离线时能看到，可以更新 AsyncStorage，
+        // 但既然数据源已变为数据库，建议主要依赖 API。
+        // 为了兼容旧逻辑，我们可以继续保存到本地缓存：
+        // const updatedPlaces = [newPlace, ...places];
+        // await saveCustomPlaces(updatedPlaces);
+
+        return newPlace;
+
+      } catch (err) {
+        console.error("Error adding place:", err);
+        throw err;
+      }
     },
-    [places, saveCustomPlaces]
+    [places] // 移除 saveCustomPlaces 依赖，如果不再使用
   );
 
   const updatePlace = useCallback(

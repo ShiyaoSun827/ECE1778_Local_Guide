@@ -149,6 +149,30 @@ The Expo server prints a QR code or you can press `i`/`a` to launch an emulator.
    - `/signup` uses Better Auth to create the account and sends a Gmail-based verification link.  
    - `/signin` logs in and routes back to `/`.
 
+
+
+5. **APK**
+  - First install your JAVA 17
+  ```bash
+  conda install -c conda-forge openjdk=17 
+  ```
+  - get your java path
+  ```bash
+  /usr/libexec/java_home -v 17
+  ```
+  - copy your java path ,and put that command in the frontend/android/gradle.properties
+  ```bash
+  org.gradle.java.home=your java path
+  ```
+  - run
+  ```bash
+  cd android && ./gradlew --stop && cd ..
+  rm -rf android/.gradle
+  eas build -p android --profile preview --local
+  ```
+
+
+
 ---
 
 ## Development Tips

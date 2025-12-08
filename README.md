@@ -1,8 +1,5 @@
 # Team 29: Local Guide - Final Project Report
 
-> **ECE 1778 - Mobile Application Development**  
-> A modern travel companion application for discovering, saving, and managing local places of interest.
-
 ## Team Information
 
 | Team Member | Student Number | GitHub Username |
@@ -420,7 +417,30 @@ View your profile and account information.
 ---
 
 ## Development Guide
+### Quick Start (For End Users)
 
+**The Android APK has been pre-built and the backend is already deployed on Fly.io. You can use the app immediately without any setup!**
+
+1. **Download the APK**: Get the pre-built Android APK file from the project repository
+
+2. **Install on Android Device**:
+   - Transfer the APK file to your Android device
+   - Enable "Install from Unknown Sources" in your device settings (Settings → Security → Unknown Sources)
+   - Tap the APK file to install
+
+3. **Launch the App**: Open "Local Guide" from your app drawer
+
+4. **Sign In**: Use the demo account or create your own:
+   - **Demo Account Email**: myang1296237@gmail.com
+   - **Demo Account Password**: 12345678
+
+**That's it!** The app is ready to use. The backend is already running on `https://local-guide-backend.fly.dev`, so all features will work out of the box.
+
+---
+
+### Development Setup (For Developers)
+
+If you want to modify the code, build from source, or set up your own backend, follow the instructions below.
 ### Prerequisites
 
 - **Node.js**: Version 18 or higher

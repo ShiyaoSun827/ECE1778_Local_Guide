@@ -1008,9 +1008,6 @@ Feel free to fork, extend, or integrate into your own projects. Pull requests an
 
 ---
 
-**Repository**: [GitHub Repository URL]  
-**Last Updated**: December 2024  
-**Version**: 1.0.0
 
 
 

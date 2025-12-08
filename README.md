@@ -14,8 +14,11 @@
 
 ## Links and Files
 **Demo Video**: https://www.youtube.com/watch?v=bMrQUeugFBc
+
 **Repo Link**: https://github.com/ShiyaoSun827/ECE1778_Local_Guide/tree/main
+
 **APK Link**: https://drive.google.com/file/d/17lGar_bVCuMW_BSuZfJNM0X8q7HfaYy2/view?usp=sharing
+
 
 ---
 
@@ -1008,5 +1011,6 @@ Feel free to fork, extend, or integrate into your own projects. Pull requests an
 **Repository**: [GitHub Repository URL]  
 **Last Updated**: December 2024  
 **Version**: 1.0.0
+
 
 

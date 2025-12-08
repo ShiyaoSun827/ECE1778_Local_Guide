@@ -7,19 +7,18 @@ const prisma = new PrismaClient();
 
 
 export async function GET(req: NextRequest) {
-  
   const { searchParams } = new URL(req.url);
   const type = searchParams.get("type"); 
 
   const session = await auth.api.getSession({ headers: req.headers });
   
-  let whereClause = {};
-  
- 
-  if (type === "mine" && session) {
-    whereClause = { userId: session.user.id };
-  } 
+  // If user is not logged in, return empty array
+  if (!session) {
+    return NextResponse.json([]);
+  }
 
+  // Always filter by userId to ensure users only see their own places
+  const whereClause = { userId: session.user.id };
 
   const places = await prisma.place.findMany({
     where: whereClause,

@@ -41,8 +41,6 @@
         "android.permission.READ_EXTERNAL_STORAGE",
         "android.permission.WRITE_EXTERNAL_STORAGE",
         "android.permission.INTERNET",
-        "android.permission.ACCESS_COARSE_LOCATION",
-        "android.permission.ACCESS_FINE_LOCATION",
         "android.permission.RECORD_AUDIO"
       ],
       "usesCleartextTraffic": false
@@ -75,7 +73,7 @@
     "scheme": "localguide",
     "extra": {
       "eas": {
-        "projectId": "b07edd1d-8b9f-4724-8ba1-5fbdfda7a6e5"
+        "projectId": "fbcbe761-d096-4b1c-8a89-ef0e0556ca7c"
       }
     }
   }

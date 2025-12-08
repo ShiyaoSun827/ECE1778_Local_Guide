@@ -187,9 +187,10 @@ export function PlacesProvider({ children }: PlacesProviderProps) {
   const loadCustomPlaces = useCallback(async () => {
     try {
       // Try to load from API first
-      const response = await apiFetch("/api/places?type=mine");
+      const response = await apiFetch("/api/places");
       if (response.ok) {
         const data = await response.json();
+        // API now always returns only the current user's places (or empty array if not logged in)
         const transformedPlaces = (data || []).map((place: any) => ({
           ...place,
           name: place.title || place.placeName || place.name || "",
@@ -201,22 +202,30 @@ export function PlacesProvider({ children }: PlacesProviderProps) {
         }));
         setPlaces(transformedPlaces);
       } else if (response.status === 401) {
-        // Not logged in, try AsyncStorage as fallback
-        const data = await AsyncStorage.getItem(CUSTOM_STORAGE_KEY);
-        if (data) {
-          setPlaces(hydrateCustomPlaces(JSON.parse(data)));
+        // Not logged in, clear places or load from AsyncStorage as fallback
+        setPlaces([]);
+        try {
+          const data = await AsyncStorage.getItem(CUSTOM_STORAGE_KEY);
+          if (data) {
+            setPlaces(hydrateCustomPlaces(JSON.parse(data)));
+          }
+        } catch (storageErr) {
+          console.error("Error loading from AsyncStorage:", storageErr);
         }
       }
     } catch (err) {
       console.error("Error loading custom places:", err);
-      // Fallback to AsyncStorage on error
+      // On error, try AsyncStorage as fallback (for offline mode)
       try {
         const data = await AsyncStorage.getItem(CUSTOM_STORAGE_KEY);
         if (data) {
           setPlaces(hydrateCustomPlaces(JSON.parse(data)));
+        } else {
+          setPlaces([]);
         }
       } catch (storageErr) {
         console.error("Error loading from AsyncStorage:", storageErr);
+        setPlaces([]);
       }
     } finally {
       setLoading(false);

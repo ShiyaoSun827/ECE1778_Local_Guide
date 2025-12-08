@@ -1,4 +1,4 @@
-# Local Guide - Final Project Report
+# Team 29: Local Guide - Final Project Report
 
 > **ECE 1778 - Mobile Application Development**  
 > A modern travel companion application for discovering, saving, and managing local places of interest.
@@ -1011,6 +1011,7 @@ Feel free to fork, extend, or integrate into your own projects. Pull requests an
 **Repository**: [GitHub Repository URL]  
 **Last Updated**: December 2024  
 **Version**: 1.0.0
+
 
 
 

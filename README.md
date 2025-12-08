@@ -2,12 +2,12 @@
 
 ## Team Information
 
-| Team Member | Student Number | GitHub Username |
-|------------|----------------|-----------------|
-| Wenxuan Wang | 1004975967 | WenxuanWangut |
-| Shiyao Sun | 1006769793 | ShiyaoSun827 |
-| Zhiyuan Yaoyuan | 1006262205 | Neonyao |
-| Ming Yang | 1006262223 | mingy6237 |
+| Team Member | Student Number | GitHub Username | Email |
+|------------|----------------|-----------------|-------|
+| Wenxuan Wang | 1004975967 | WenxuanWangut | wenxuanrz.wang@mail.utoronto.ca |
+| Shiyao Sun | 1006769793 | ShiyaoSun827 | shiyao.sun@mail.utoronto.ca |
+| Zhiyuan Yaoyuan | 1006262205 | Neonyao | zhiyuan.yaoyuan@mail.utoronto.ca |
+| Ming Yang | 1006262223 | mingy6237 | mingy.yang@mail.utoronto.ca |
 
 ## Links and Files
 **Demo Video**: https://www.youtube.com/watch?v=bMrQUeugFBc
@@ -809,8 +809,8 @@ CDN_URL="https://movies-images.tor1.cdn.digitaloceanspaces.com"
 ### Video Demo
 
 A video demonstration of the Local Guide application is available at:
-- **Location**: [Link to video file or YouTube/Vimeo URL]
-- **Duration**: [X] minutes
+- **Location**: https://www.youtube.com/watch?v=bMrQUeugFBc
+- **Platform**: YouTube
 - **Content**: 
   - App overview and navigation
   - User authentication flow

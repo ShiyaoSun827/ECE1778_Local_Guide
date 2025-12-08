@@ -290,6 +290,9 @@ The application follows a **client-server architecture** with:
    - Enter email, password (min 8 characters), and display name
    - Check your email for verification link
    - After verification, sign in with your credentials
+   **Tip:** During testing, you can use the following demo account instead of creating a new one:
+   **Email:** myang1296237@gmail.com
+   **Password:** 12345678
 3. **Grant Permissions**: Allow location and notification permissions when prompted
 
 ### Main Features
